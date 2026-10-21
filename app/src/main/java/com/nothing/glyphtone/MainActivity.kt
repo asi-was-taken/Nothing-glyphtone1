@@ -1,13 +1,19 @@
 package com.nothing.glyphtone
 
 import android.app.Activity
+import android.app.DownloadManager
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.os.Environment
+import android.util.Base64
 import android.webkit.*
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import java.io.File
+import java.io.FileOutputStream
 
 class MainActivity : AppCompatActivity() {
 
@@ -84,24 +90,15 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // Handle Download requests (CSV and WAV)
-        webView.setDownloadListener { url, _, contentDisposition, mimeType, _ ->
-            val intent = Intent(Intent.ACTION_VIEW).apply {
-                setDataAndType(Uri.parse(url), mimeType)
-            }
+        // Handle Download requests (CSV, WAV, and Base64 Data URIs)
+        webView.setDownloadListener { url, userAgent, contentDisposition, mimeType, _ ->
             try {
-                startActivity(intent)
-            } catch (e: Exception) {
-                Toast.makeText(this, "Downloading file...", Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
-
-    override fun onBackPressed() {
-        if (webView.canGoBack()) {
-            webView.goBack()
-        } else {
-            super.onBackPressed()
-        }
-    }
-}
+                if (url.startsWith("data:")) {
+                    // Handle base64 encoded data URI exports directly
+                    saveDataUriToDownloads(url, mimeType)
+                } else {
+                    // Handle standard HTTP / File URLs via DownloadManager
+                    val fileName = URLUtil.guessFileName(url, contentDisposition, mimeType)
+                    val request = DownloadManager.Request(Uri.parse(url)).apply {
+                        setMimeType(mimeType)
+                        val cookies = CookieManager.getInstance().getCookie(url)
