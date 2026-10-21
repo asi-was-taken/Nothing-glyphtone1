@@ -25,11 +25,10 @@ jobs:
         gradle-version: '8.7'
 
     - name: Build Debug APK
-      run: gradle assembleDebug --stacktrace
+      run: gradle assembleDebug --console=plain
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
         name: Glyphtone3a-Debug-APK
         path: app/build/outputs/apk/debug/app-debug.apk
-        
