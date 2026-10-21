@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nothing Phone (3a) Custom Beat-Synced Ringtone Studio</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0a0b0d">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    /* Unlit frosted diffuser cap */
+    .diffuser-idle {
+      stroke: #b8bdc7;
+      opacity: 0.9;
+      filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5));
+    }
+    /* Lit diffuser with intense pure-white LED bloom */
+    .diffuser-active {
+      stroke: #ffffff !important;
+      opacity: 1 !important;
+      filter: drop-shadow(0 0 6px #ffffff) drop-shadow(0 0 16px rgba(255, 255, 255, 0.95)) drop-shadow(0 0 35px rgba(255, 255, 255, 0.8));
+    }
+    /* Dot Matrix Texture for the upper chassis plate */
+    .dot-matrix-pattern {
+      background-color: #272b33;
+      background-image: radial-gradient(#3c424d 1.5px, transparent 1.5px);
+      background-size: 7px 7px;
+    }
+  </style>
+</head>
+<body class="bg-transparent text-[var(--foreground)] antialiased p-3 sm:p-5">
+  <div class="max-w-6xl mx-auto bg-neutral-950 text-neutral-100 border border-neutral-800 rounded-2xl p-5 sm:p-6 shadow-2xl">
+    
+    <!-- Header -->
+    <div class="flex flex-wrap items-center justify-between border-b border-neutral-800 pb-4 mb-6 gap-3">
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="inline-block w-2.5 h-2.5 rounded-full bg-red-600 animate-pulse"></span>
+          <span class="text-xs uppercase tracking-[0.25em] text-red-500 font-mono font-bold">NOTHING PHONE (3a)</span>
+        </div>
+        <h1 class="text-2xl font-mono font-bold tracking-tight text-white mt-1">MP3 BEAT-SYNCED GLYPHTONE MAKER</h1>
+        <p class="text-xs text-neutral-400 font-mono">IMPORT ANY MP3 &bull; AI BEAT ONSET & FREQUENCY ANALYSIS &bull; 60 FPS GLYPH METADATA</p>
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        <a href="download_project.html" class="text-xs px-3 py-1.5 rounded-lg border border-neutral-700 bg-neutral-900 hover:bg-neutral-800 text-neutral-200 font-mono font-bold flex items-center gap-1.5 transition shadow">
+          <svg class="w-3.5 h-3.5 text-red-500 fill-none stroke-current" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+          <span>DOWNLOAD PROJECT (.ZIP)</span>
+        </a>
+        <button id="btnInstallApp" class="text-xs px-3 py-1.5 rounded-lg border border-red-700 bg-red-950/80 hover:bg-red-900 text-red-200 font-mono font-bold flex items-center gap-1.5 transition shadow">
+          <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>
+          <span>INSTALL ANDROID APP</span>
+        </button>
+        <span id="engineBadge" class="text-xs px-2.5 py-1 rounded border border-green-800 bg-green-950/60 text-green-300 font-mono font-bold">AUDIO READY</span>
+      </div>
+    </div>
+
+    <!-- Main Workspace -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      
+      <!-- Left Column: Phone Mockup (100% Equal Spacing 5.5px, Neutral Black Lenses) -->
+      <div class="lg:col-span-5 flex flex-col items-center justify-center bg-neutral-900/90 border border-neutral-800 rounded-xl p-4 sm:p-5 relative">
+        
+        <div class="flex items-center justify-between w-full mb-3 text-xs font-mono">
+          <span class="text-neutral-400 uppercase tracking-widest font-bold">PHONE (3a) REAR VIEW</span>
+          <span id="fpsCounter" class="text-neutral-400">60.0 FPS</span>
+        </div>
+
+        <!-- Phone Outer Shell (270px x 540px, 1:2 ratio) -->
+        <div class="w-[270px] h-[540px] rounded-[42px] bg-[#22252a] p-[3px] shadow-[0_20px_50px_rgba(0,0,0,0.9)] relative select-none flex flex-col overflow-hidden border border-[#3b404b]">
+          
+          <!-- Outer Metallic Chamfer Border -->
+          <div class="w-full h-full rounded-[38px] bg-[#1a1d22] relative overflow-hidden flex flex-col border border-[#484f5d]/70">
+            
+            <!-- Side Buttons -->
+            <div class="absolute -left-[2px] top-[140px] w-[2px] h-[36px] bg-[#4f5563] rounded-l"></div>
+            <div class="absolute -left-[2px] top-[184px] w-[2px] h-[36px] bg-[#4f5563] rounded-l"></div>
+            <div class="absolute -right-[2px] top-[152px] w-[2px] h-[48px] bg-[#4f5563] rounded-r"></div>
+
+            <!-- ================= UPPER MODULE (230px tall) ================= -->
+            <div class="h-[230px] w-full dot-matrix-pattern relative border-b-2 border-[#1c1f26] overflow-hidden">
+              
+              <!-- Torx Screws around upper plate perimeter -->
+              <div class="absolute top-2.5 left-2.5 w-3 h-3 rounded-full bg-[#1e2126] border border-[#505763] flex items-center justify-center shadow-sm z-30">
+                <div class="w-1 h-1 bg-[#0d0e11] rounded-full"></div>
+              </div>
+              <div class="absolute top-2.5 right-2.5 w-3 h-3 rounded-full bg-[#1e2126] border border-[#505763] flex items-center justify-center shadow-sm z-30">
+                <div class="w-1 h-1 bg-[#0d0e11] rounded-full"></div>
+              </div>
+              <div class="absolute bottom-2.5 left-2.5 w-3 h-3 rounded-full bg-[#1e2126] border border-[#505763] flex items-center justify-center shadow-sm z-30">
+                <div class="w-1 h-1 bg-[#0d0e11] rounded-full"></div>
+              </div>
+
+              <!-- STATIC RED PRINTED ACCENT SQUARE (Does NOT light up, purely aesthetic badge) -->
+              <div class="absolute bottom-[22px] right-[18px] w-[11px] h-[11px] bg-[#d81d24] border border-[#8b1419] shadow-sm z-30 rounded-[1px]"></div>
+
+              <!-- UNIFIED SVG: Circular Disc, Camera, & 3 Glyphs with Exact 5.5px Spacing -->
+              <svg class="absolute inset-0 w-full h-full z-20" viewBox="0 0 264 230">
+                <defs>
+                  <filter id="glass-drop" x="-20%" y="-20%" width="140%" height="140%">
+                    <feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#000000" flood-opacity="0.6"/>
+                  </filter>
+                  <filter id="disc-shadow" x="-10%" y="-10%" width="120%" height="120%">
+                    <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#000000" flood-opacity="0.5"/>
+                  </filter>
+                </defs>
+
+                <!-- ================= 1. CIRCULAR SLATE DISC (Center: 132, 115 | Radius: 92) ================= -->
+                <circle cx="132" cy="115" r="92" fill="#505662" stroke="#646b7a" stroke-width="1.2" filter="url(#disc-shadow)"/>
+
+                <!-- Center Alignment Dot below camera -->
+                <circle cx="132" cy="192" r="2" fill="#353942" stroke="#646b7a" stroke-width="0.8"/>
+
+                <!-- Flash/Sensor Module at ~11:00 o'clock on the disc -->
+                <circle cx="106" cy="49" r="9" fill="#202329" stroke="#788091" stroke-width="1"/>
+                <circle cx="106" cy="49" r="4.5" fill="#d4af37" stroke="#fef08a" stroke-width="0.6"/>
+
+                <!-- ================= 2. RAISED CLEAR GLASS CAMERA HOUSING & TRIPLE LENSES ================= -->
+                <!-- Clear Glass Beveled Surround -->
+                <rect x="62" y="85" width="140" height="60" rx="30" fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.45)" stroke-width="1.5" filter="url(#glass-drop)"/>
+                <!-- Inner Pitch-Black Camera Pill -->
+                <rect x="68" y="91" width="128" height="48" rx="24" fill="#0a0b0d" stroke="#2d3038" stroke-width="1"/>
+
+                <!-- Left Lens (Wide Angle - Deep Neutral Black) -->
+                <circle cx="94" cy="115" r="16" fill="#0d0e11" stroke="#2d3038" stroke-width="1"/>
+                <circle cx="94" cy="115" r="8" fill="#050608" stroke="#1f2228" stroke-width="1"/>
+                <circle cx="94" cy="115" r="4" fill="#1b212c"/>
+
+                <!-- Middle Lens (Auxiliary Sensor - Deep Neutral Black) -->
+                <circle cx="132" cy="115" r="13" fill="#0d0e11" stroke="#2d3038" stroke-width="1"/>
+                <circle cx="132" cy="115" r="6.5" fill="#050608" stroke="#1f2228" stroke-width="1"/>
+                <circle cx="132" cy="115" r="3" fill="#13161e"/>
+
+                <!-- Right Lens (Primary Sensor - NO BLUE TINT, Clean Neutral Dark Glass) -->
+                <circle cx="170" cy="115" r="17" fill="#0d0e11" stroke="#2d3038" stroke-width="1.5"/>
+                <circle cx="170" cy="115" r="11" fill="#07080a" stroke="#1f2228" stroke-width="1"/>
+                <circle cx="170" cy="115" r="5" fill="#14161a"/>
+                <!-- Neutral subtle glass specular reflection arc -->
+                <path d="M 164 109 A 8 8 0 0 1 176 109" fill="none" stroke="#505664" stroke-width="1" opacity="0.5"/>
+
+                <!-- ================= 3. THE 3 GLYPH LED STRIPS (Exact Radius: 101 | Exact 5.5px Space to Disc Everywhere) ================= -->
+                
+                <!-- STRIP 1: Top-Left Arc (~10:00 to 11:30 o'clock) -->
+                <path d="M 114.5 15.5 A 101 101 0 0 0 35.9 83.8" fill="none" stroke="#1c1f26" stroke-width="9.5" stroke-linecap="round"/>
+                <path id="glyph-tl" d="M 114.5 15.5 A 101 101 0 0 0 35.9 83.8" fill="none" stroke="#b8bdc7" stroke-width="7" stroke-linecap="round" class="diffuser-idle transition-all duration-75"/>
+
+                <!-- STRIP 2: Bottom-Left Arc (~7:30 to 8:30 o'clock - Benchmark Spacing) -->
+                <path d="M 40.5 157.7 A 101 101 0 0 0 78.5 200.7" fill="none" stroke="#1c1f26" stroke-width="9.5" stroke-linecap="round"/>
+                <path id="glyph-bl" d="M 40.5 157.7 A 101 101 0 0 0 78.5 200.7" fill="none" stroke="#b8bdc7" stroke-width="7" stroke-linecap="round" class="diffuser-idle transition-all duration-75"/>
+
+                <!-- STRIP 3: Right Crescent Arc (~1:45 to 4:15 o'clock) -->
+                <path d="M 207.1 47.4 A 101 101 0 0 1 207.1 182.6" fill="none" stroke="#1c1f26" stroke-width="9.5" stroke-linecap="round"/>
+                <path id="glyph-r" d="M 207.1 47.4 A 101 101 0 0 1 207.1 182.6" fill="none" stroke="#b8bdc7" stroke-width="7" stroke-linecap="round" class="diffuser-idle transition-all duration-75"/>
+
+              </svg>
+
+            </div>
+
+            <!-- ================= LOWER MODULE (Translucent Slate Grey & Ribbon Cable) ================= -->
+            <div class="flex-1 w-full bg-[#363b46] relative p-3 flex flex-col justify-between overflow-hidden">
+              
+              <!-- Circular Coin Module at Top-Left of lower section -->
+              <div class="w-8 h-8 rounded-full bg-[#464c57] border border-[#585f6e] shadow-inner flex items-center justify-center relative z-10">
+                <div class="w-1.5 h-0.5 bg-[#252830] absolute top-1"></div>
+                <div class="w-1.5 h-0.5 bg-[#252830] absolute bottom-1"></div>
+              </div>
+
+              <!-- Lower Circuit Ribbon Cables & Panels (Photorealistic Slate Shading) -->
+              <div class="absolute inset-0 pointer-events-none">
+                <svg class="w-full h-full" viewBox="0 0 264 300">
+                  <rect x="0" y="40" width="118" height="260" fill="#2c303a" opacity="0.6"/>
+                  <path d="M 78 0 L 218 0 A 26 26 0 0 1 244 26 L 244 140 L 206 140 L 206 52 A 14 14 0 0 0 192 38 L 154 38 L 154 300 L 118 300 L 118 38 L 78 38 Z" fill="#58606f" stroke="#666f80" stroke-width="1"/>
+                  <path d="M 128 45 L 128 285 M 144 45 L 144 285" stroke="#484f5d" stroke-width="1.5" stroke-dasharray="3,3"/>
+                  <circle cx="128" cy="285" r="3.5" fill="#1e2126" stroke="#505763" stroke-width="1"/>
+                  <circle cx="236" cy="285" r="3.5" fill="#1e2126" stroke="#505763" stroke-width="1"/>
+                  <text x="208" y="250" fill="#262930" font-family="monospace" font-size="8" font-weight="bold">CE</text>
+                  <text x="28" y="250" fill="#22252c" font-family="monospace" font-size="9" font-weight="bold" letter-spacing="2" transform="rotate(-90 28,250)">NOTHING</text>
+                </svg>
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- Real-time Zone Readings -->
+        <div class="w-full mt-4 grid grid-cols-3 gap-1.5 text-center font-mono text-[11px] text-neutral-400">
+          <div class="bg-neutral-950 border border-neutral-800 rounded p-1.5">
+            <div class="text-[10px] text-neutral-500">TL (SNARE/MID)</div>
+            <strong id="val-tl" class="text-white text-xs">0</strong>
+          </div>
+          <div class="bg-neutral-950 border border-neutral-800 rounded p-1.5">
+            <div class="text-[10px] text-neutral-500">BL (HI-HAT/HIGH)</div>
+            <strong id="val-bl" class="text-white text-xs">0</strong>
+          </div>
+          <div class="bg-neutral-950 border border-neutral-800 rounded p-1.5">
+            <div class="text-[10px] text-neutral-500">RIGHT (KICK/BASS)</div>
+            <strong id="val-r" class="text-white text-xs">0</strong>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Right Column: MP3 Importer & Beat-Sync Engine -->
+      <div class="lg:col-span-7 flex flex-col gap-4">
+        
+        <!-- MP3 Upload Dropzone -->
+        <div class="bg-neutral-900 border border-neutral-800 rounded-xl p-4">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-mono text-neutral-400 uppercase tracking-wider font-bold">1. IMPORT AUDIO TRACK</span>
+            <span id="audioTrackStatus" class="text-xs font-mono text-neutral-400">DEMO SYNTH LOADED</span>
+          </div>
+
+          <label class="border-2 border-dashed border-neutral-700 hover:border-red-500/80 bg-neutral-950/80 rounded-xl p-4 flex flex-col items-center justify-center cursor-pointer transition group">
+            <input type="file" id="audioFileInput" accept="audio/*,.mp3,.wav,.ogg,.m4a,.flac" class="hidden" />
+            <svg class="w-8 h-8 text-neutral-500 group-hover:text-red-500 transition mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+            </svg>
+            <span class="font-mono text-xs font-bold text-white group-hover:text-red-400 transition">CLICK TO UPLOAD MP3 / WAV</span>
+            <span class="font-mono text-[11px] text-neutral-500 mt-1">Supports MP3, WAV, FLAC, M4A, OGG &bull; Any duration</span>
+          </label>
+        </div>
+
+        <!-- Audio Player & Waveform Visualizer -->
+        <div class="bg-neutral-900 border border-neutral-800 rounded-xl p-4">
+          <div class="flex items-center justify-between mb-2">
+            <div class="truncate max-w-[280px]">
+              <span id="currentTrackName" class="text-xs font-mono font-bold text-white block truncate">Nothing 3a Demo Synth.mp3</span>
+              <span id="trackDurationInfo" class="text-[10px] font-mono text-neutral-400">Duration: 06.00s &bull; Mode: Beat-Synched</span>
+            </div>
+            <span id="playbackTime" class="text-xs font-mono text-red-400 font-bold">00:00.000</span>
+          </div>
+
+          <!-- Interactive Waveform Canvas with Playhead & Beat markers -->
+          <div class="relative w-full h-16 bg-neutral-950 rounded-lg overflow-hidden border border-neutral-800 cursor-pointer" id="waveformContainer">
+            <canvas id="waveformCanvas" class="w-full h-full block"></canvas>
+            <div id="playheadBar" class="absolute top-0 bottom-0 left-0 w-0.5 bg-red-500 pointer-events-none shadow-[0_0_8px_#ff2222]"></div>
+          </div>
+
+          <!-- Play / Stop Bar -->
+          <div class="flex items-center gap-3 mt-4">
+            <button id="btnPlay" class="flex-1 bg-white hover:bg-neutral-200 text-black font-mono font-bold py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 transition shadow">
+              <svg id="playIcon" class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+              <span id="playBtnText">PLAY & SYNC GLYPHS</span>
+            </button>
+            <button id="btnStop" class="bg-red-950/40 hover:bg-red-900/60 text-red-300 font-mono font-bold py-2.5 px-5 rounded-lg transition border border-red-800 flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M6 6h12v12H6z"/></svg>
+              <span>STOP</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Beat Sync Tuning & Zone Routing Options -->
+        <div class="bg-neutral-900 border border-neutral-800 rounded-xl p-4">
+          <span class="text-xs font-mono text-neutral-400 uppercase tracking-wider block mb-3 font-bold">2. BEAT DETECTION TUNING</span>
+          
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+            <div>
+              <div class="flex justify-between text-xs font-mono text-neutral-300 mb-1">
+                <span>BASS SENSITIVITY (KICK)</span>
+                <span id="valBassSens" class="text-red-400">1.4x</span>
+              </div>
+              <input type="range" id="sliderBass" min="0.5" max="3.0" step="0.1" value="1.4" class="w-full accent-white bg-neutral-950 h-2 rounded cursor-pointer" />
+            </div>
+
+            <div>
+              <div class="flex justify-between text-xs font-mono text-neutral-300 mb-1">
+                <span>BEAT ONSET THRESHOLD</span>
+                <span id="valThreshold" class="text-red-400">Normal</span>
+              </div>
+              <input type="range" id="sliderThreshold" min="0.1" max="0.9" step="0.05" value="0.35" class="w-full accent-white bg-neutral-950 h-2 rounded cursor-pointer" />
+            </div>
+          </div>
+
+          <!-- Glyph Light Mapping Mode -->
+          <label class="text-[11px] font-mono text-neutral-400 uppercase tracking-wider block mb-1.5">BEAT-TO-GLYPH ROUTING PRESET</label>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+            <button class="mode-btn active bg-neutral-800 border border-white text-white p-2 rounded text-left font-mono text-xs transition" data-mode="drums">
+              <div class="font-bold">STEM SPLIT</div>
+              <div class="text-[9px] text-neutral-400">Kick &rarr; R, Snare &rarr; TL, Hat &rarr; BL</div>
+            </button>
+            <button class="mode-btn bg-neutral-950 border border-neutral-800 hover:border-neutral-700 text-neutral-300 p-2 rounded text-left font-mono text-xs transition" data-mode="orbit">
+              <div class="font-bold">ORBIT ROTATION</div>
+              <div class="text-[9px] text-neutral-400">Rotates around circle on beats</div>
+            </button>
+            <button class="mode-btn bg-neutral-950 border border-neutral-800 hover:border-neutral-700 text-neutral-300 p-2 rounded text-left font-mono text-xs transition" data-mode="strobe">
+              <div class="font-bold">ENERGY RAVE</div>
+              <div class="text-[9px] text-neutral-400">Full strobe drops on high amplitude</div>
+            </button>
+            <button class="mode-btn bg-neutral-950 border border-neutral-800 hover:border-neutral-700 text-neutral-300 p-2 rounded text-left font-mono text-xs transition" data-mode="pulse">
+              <div class="font-bold">ORGANIC GLOW</div>
+              <div class="text-[9px] text-neutral-400">Smooth breathing volume track</div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Export Actions for Nothing OS Ringtones -->
+        <div class="bg-neutral-900 border border-neutral-800 rounded-xl p-4 flex flex-col gap-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-mono text-neutral-400 uppercase tracking-wider font-bold">3. EXPORT CUSTOM RINGTONE & GLYPH DATA</span>
+            <span id="framesCount" class="text-xs font-mono text-green-400 font-bold">360 FRAMES (60 FPS)</span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <button id="btnExportCSV" class="bg-red-600 hover:bg-red-500 text-white font-mono font-bold py-2.5 px-3 rounded-lg text-xs flex items-center justify-center gap-1.5 transition">
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+              <span>EXPORT SYNCED 60 FPS CSV</span>
+            </button>
+            <button id="btnExportAudio" class="bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-neutral-700 font-mono text-xs py-2.5 px-3 rounded-lg transition flex items-center justify-center gap-1.5">
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
+              <span>EXPORT RINGTONE AUDIO (.WAV)</span>
+            </button>
+          </div>
+
+          <!-- Compilation Command Assistant -->
+          <div class="bg-neutral-950 border border-neutral-800 rounded-lg p-3 text-[11px] font-mono text-neutral-400">
+            <div class="text-neutral-300 font-bold mb-1 flex items-center justify-between">
+              <span>HOW TO INJECT INTO NOTHING PHONE (3a):</span>
+              <button id="btnCopyCmd" class="text-red-400 hover:text-red-300 text-[10px] underline">COPY FFMPEG COMMAND</button>
+            </div>
+            <p class="leading-relaxed">
+              Use the exported CSV with Python/FFmpeg to compile a native <code class="text-neutral-200 bg-neutral-900 px-1 rounded">.ogg</code> Glyphtone:
+            </p>
+            <code id="ffmpegCmdBox" class="block bg-neutral-900 border border-neutral-800 rounded p-2 text-neutral-200 mt-1 select-all break-all text-[10px]">
+              python3 build_glyphtone.py --audio my_song.mp3 --csv custom_3a_lightshow.csv -o ringtone.ogg
+            </code>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    // Audio Context & State
+    let audioCtx = null;
+    let masterGain = null;
+    let activeSource = null;
+    let isPlaying = false;
+    let animFrameId = null;
+    let routingMode = 'drums';
+    let bassSens = 1.4;
+    let onsetThreshold = 0.35;
+
+    // Audio Data
+    let currentAudioBuffer = null;
+    let currentFileName = "Nothing 3a Demo Synth.mp3";
+    let precomputedFrames = [];
+    let songDuration = 6.0;
+    let playbackStartTime = 0;
+    let seekOffset = 0;
+
+    // DOM Elements
+    const glyphTL = document.getElementById('glyph-tl');
+    const glyphBL = document.getElementById('glyph-bl');
+    const glyphR = document.getElementById('glyph-r');
+    
+    const valTL = document.getElementById('val-tl');
+    const valBL = document.getElementById('val-bl');
+    const valR = document.getElementById('val-r');
+    
+    const playbackTime = document.getElementById('playbackTime');
+    const playheadBar = document.getElementById('playheadBar');
+    const fpsCounter = document.getElementById('fpsCounter');
+    const waveformCanvas = document.getElementById('waveformCanvas');
+    const waveformContainer = document.getElementById('waveformContainer');
+    const framesCount = document.getElementById('framesCount');
+    const engineBadge = document.getElementById('engineBadge');
+    const playBtnText = document.getElementById('playBtnText');
+
+    // Bulletproof AudioContext Initializer
+    async function getOrCreateAudioContext() {
+      if (!audioCtx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioContextClass();
+        masterGain = audioCtx.createGain();
+        masterGain.gain.setValueAtTime(1.0, audioCtx.currentTime);
+        masterGain.connect(audioCtx.destination);
+      }
+      if (audioCtx.state === 'suspended') {
+        await audioCtx.resume();
+      }
+      if (masterGain) {
+        masterGain.gain.cancelScheduledValues(audioCtx.currentTime);
+        masterGain.gain.setValueAtTime(1.0, audioCtx.currentTime);
+      }
+      return audioCtx;
+    }
+
+    // Synchronous In-Memory Default Demo Sound Synthesizer (Zero Latency, No OfflineContext Glitches)
+    function generateDemoBufferSync(ctx) {
+      const sr = (ctx && ctx.sampleRate) ? ctx.sampleRate : 44100;
+      const dur = 6.0;
+      songDuration = dur;
+      const totalSamples = Math.floor(sr * dur);
+      
+      const buffer = ctx.createBuffer(1, totalSamples, sr);
+      const data = buffer.getChannelData(0);
+      const bpm = 126;
+      const beat = 60 / bpm;
+
+      for (let i = 0; i < totalSamples; i++) {
+        const t = i / sr;
+        const beatIdx = Math.floor(t / beat);
+        const beatTime = t % beat;
+        let s = 0;
+
+        // 808 Kick Drum
+        if (beatTime < 0.22) {
+          const kickFreq = 145.0 * Math.exp(-beatTime * 18.0) + 32.0;
+          const kickEnv = Math.max(0, 1.0 - beatTime / 0.22);
+          s += 0.65 * Math.sin(2.0 * Math.PI * kickFreq * beatTime) * kickEnv;
+        }
+
+        // Snare / Clap
+        if (beatIdx % 2 === 1 && beatTime < 0.12) {
+          const noise = Math.random() * 2 - 1;
+          s += 0.32 * noise * Math.max(0, 1.0 - beatTime / 0.12);
+        }
+
+        // Synth Arpeggios
+        const notes = [440, 554.37, 659.25, 880, 659.25, 554.37];
+        const freq = notes[beatIdx % notes.length];
+        const noteTime = beatTime % (beat / 2.0);
+        const synthEnv = Math.max(0, 1.0 - (noteTime / (beat / 2.0)));
+        const synthWave = (2.0 * ((noteTime * freq) % 1.0) - 1.0);
+        s += 0.28 * synthWave * synthEnv;
+
+        data[i] = Math.max(-1, Math.min(1, s));
+      }
+
+      return buffer;
+    }
+
+    // Process Buffer into 60 FPS Glyph Frames
+    function processAudioForGlyphs() {
+      if (!currentAudioBuffer) return;
+      const sr = currentAudioBuffer.sampleRate;
+      const data = currentAudioBuffer.getChannelData(0);
+      const totalLen = data.length;
+      songDuration = currentAudioBuffer.duration;
+      const fps = 60.0;
+      const totalFrames = Math.floor(songDuration * fps);
+      const samplesPerFrame = Math.max(1, Math.floor(sr / fps));
+
+      precomputedFrames = [];
+
+      let bassEnv = 0, midEnv = 0, highEnv = 0;
+      let prevBass = 0;
+
+      for (let f = 0; f < totalFrames; f++) {
+        const startIdx = f * samplesPerFrame;
+        const endIdx = Math.min(totalLen, startIdx + samplesPerFrame);
+
+        let sumBass = 0, sumMid = 0, sumHigh = 0;
+
+        for (let i = startIdx; i < endIdx; i++) {
+          const s = data[i];
+          const bassSample = Math.abs(s);
+          const midSample = (i > 2) ? Math.abs(s - data[i - 2]) : 0;
+          const highSample = (i > 0) ? Math.abs(s - data[i - 1]) : 0;
+
+          sumBass += bassSample;
+          sumMid += midSample;
+          sumHigh += highSample;
+        }
+
+        const count = Math.max(1, endIdx - startIdx);
+        const avgBass = (sumBass / count) * bassSens;
+        const avgMid = (sumMid / count) * 1.5;
+        const avgHigh = (sumHigh / count) * 2.0;
+
+        const attack = 0.8;
+        const decay = 0.88;
+
+        bassEnv = (avgBass > bassEnv) ? (bassEnv * (1 - attack) + avgBass * attack) : (bassEnv * decay);
+        midEnv = (avgMid > midEnv) ? (midEnv * (1 - attack) + avgMid * attack) : (midEnv * decay);
+        highEnv = (avgHigh > highEnv) ? (highEnv * (1 - attack) + avgHigh * attack) : (highEnv * decay);
+
+        let zTL = 0, zBL = 0, zR = 0;
+
+        if (routingMode === 'drums') {
+          zR = Math.round(Math.min(4095, (bassEnv > onsetThreshold ? (bassEnv * 4095 * 1.8) : (bassEnv * 2000))));
+          zTL = Math.round(Math.min(4095, (midEnv > onsetThreshold ? (midEnv * 4095 * 2.0) : (midEnv * 1200))));
+          zBL = Math.round(Math.min(4095, highEnv * 4095 * 2.2));
+        } else if (routingMode === 'orbit') {
+          const cycle = ((f / fps) % 1.2) / 1.2;
+          const boost = Math.min(1.5, (bassEnv + midEnv) * 2);
+          if (cycle < 0.33) {
+            zTL = Math.round(Math.min(4095, 4095 * boost * (1 - cycle / 0.33)));
+          } else if (cycle < 0.66) {
+            zR = Math.round(Math.min(4095, 4095 * boost * (1 - (cycle - 0.33) / 0.33)));
+          } else {
+            zBL = Math.round(Math.min(4095, 4095 * boost * (1 - (cycle - 0.66) / 0.34)));
+          }
+        } else if (routingMode === 'strobe') {
+          const power = Math.max(bassEnv, midEnv);
+          const lit = (power > onsetThreshold && (f % 2 === 0)) ? 4095 : 0;
+          zTL = lit; zBL = lit; zR = lit;
+        } else {
+          const energy = Math.min(1, (bassEnv * 0.5 + midEnv * 0.3 + highEnv * 0.2));
+          const val = Math.round(energy * 4095);
+          zTL = val; zBL = val; zR = val;
+        }
+
+        precomputedFrames.push([zTL, zBL, zR]);
+      }
+
+      framesCount.textContent = `${precomputedFrames.length} FRAMES (60 FPS)`;
+      document.getElementById('trackDurationInfo').textContent = `Duration: ${songDuration.toFixed(2)}s • Frames: ${precomputedFrames.length}`;
+    }
+
+    // Render Waveform Canvas
+    function drawWaveform() {
+      if (!currentAudioBuffer) return;
+      const canvas = waveformCanvas;
+      const ctx = canvas.getContext('2d');
+      const dpr = window.devicePixelRatio || 1;
+      
+      canvas.width = canvas.clientWidth * dpr;
+      canvas.height = canvas.clientHeight * dpr;
+      ctx.scale(dpr, dpr);
+
+      const w = canvas.clientWidth;
+      const h = canvas.clientHeight;
+      const mid = h / 2;
+
+      ctx.clearRect(0, 0, w, h);
+
+      const data = currentAudioBuffer.getChannelData(0);
+      const step = Math.ceil(data.length / w);
+      const amp = h / 2;
+
+      ctx.fillStyle = '#111317';
+      ctx.fillRect(0, 0, w, h);
+
+      ctx.beginPath();
+      ctx.strokeStyle = '#6b7280';
+      ctx.lineWidth = 1.5;
+
+      for (let i = 0; i < w; i++) {
+        let min = 1.0;
+        let max = -1.0;
+        for (let j = 0; j < step; j++) {
+          const datum = data[i * step + j] || 0;
+          if (datum < min) min = datum;
+          if (datum > max) max = datum;
+        }
+        ctx.moveTo(i, mid + min * amp * 0.9);
+        ctx.lineTo(i, mid + max * amp * 0.9);
+      }
+      ctx.stroke();
+
+      if (precomputedFrames.length > 0) {
+        ctx.fillStyle = '#ef4444';
+        const framesPerPixel = precomputedFrames.length / w;
+        for (let i = 0; i < w; i++) {
+          const frameIdx = Math.floor(i * framesPerPixel);
+          if (precomputedFrames[frameIdx] && precomputedFrames[frameIdx][2] > 3200) {
+            ctx.fillRect(i, h - 3, 1.5, 3);
+          }
+        }
+      }
+    }
+
+    window.addEventListener('resize', drawWaveform);
+
+    // Audio Playback Engine
+    async function startPlayback() {
+      const ctx = await getOrCreateAudioContext();
+      
+      if (!currentAudioBuffer) {
+        currentAudioBuffer = generateDemoBufferSync(ctx);
+        processAudioForGlyphs();
+        drawWaveform();
+      }
+
+      if (activeSource) {
+        try { activeSource.stop(0); activeSource.disconnect(); } catch (e) {}
+        activeSource = null;
+      }
+      if (animFrameId) {
+        cancelAnimationFrame(animFrameId);
+        animFrameId = null;
+      }
+
+      masterGain.gain.setValueAtTime(1.0, ctx.currentTime);
+
+      activeSource = ctx.createBufferSource();
+      activeSource.buffer = currentAudioBuffer;
+      activeSource.connect(masterGain);
+
+      const startOffset = seekOffset % songDuration;
+      activeSource.start(0, startOffset);
+      playbackStartTime = ctx.currentTime - startOffset;
+      isPlaying = true;
+
+      playBtnText.textContent = "PLAYING...";
+      engineBadge.textContent = "ACTIVE";
+      engineBadge.className = "text-xs px-2.5 py-1 rounded border border-green-700 bg-green-950 text-green-300 font-mono font-bold animate-pulse";
+
+      activeSource.onended = () => {
+        if (isPlaying && ctx.currentTime - playbackStartTime >= songDuration) {
+          seekOffset = 0;
+          startPlayback();
+        }
+      };
+
+      requestAnimationFrame(playbackTick);
+    }
+
+    function stopAllAudio() {
+      isPlaying = false;
+      if (animFrameId) {
+        cancelAnimationFrame(animFrameId);
+        animFrameId = null;
+      }
+      if (activeSource) {
+        try { activeSource.stop(0); activeSource.disconnect(); } catch (e) {}
+        activeSource = null;
+      }
+
+      playBtnText.textContent = "PLAY & SYNC GLYPHS";
+      engineBadge.textContent = "STOPPED";
+      engineBadge.className = "text-xs px-2.5 py-1 rounded border border-neutral-700 bg-neutral-900 text-neutral-400 font-mono";
+
+      applyLightValues(0, 0, 0);
+      seekOffset = 0;
+      updatePlayhead(0);
+    }
+
+    let lastTickTime = performance.now();
+    function playbackTick(now) {
+      if (!isPlaying || !audioCtx) return;
+
+      const elapsed = audioCtx.currentTime - playbackStartTime;
+      const currentLoopElapsed = elapsed % songDuration;
+
+      updatePlayhead(currentLoopElapsed);
+
+      const dt = (now - lastTickTime) / 1000;
+      lastTickTime = now;
+      if (dt > 0) fpsCounter.textContent = `${(1 / dt).toFixed(1)} FPS`;
+
+      const frameIndex = Math.floor(currentLoopElapsed * 60);
+      if (frameIndex >= 0 && frameIndex < precomputedFrames.length) {
+        const [tl, bl, r] = precomputedFrames[frameIndex];
+        applyLightValues(tl, bl, r);
+      }
+
+      animFrameId = requestAnimationFrame(playbackTick);
+    }
+
+    function updatePlayhead(timeSec) {
+      const pct = Math.min(100, (timeSec / songDuration) * 100);
+      playheadBar.style.left = `${pct}%`;
+      const s = Math.floor(timeSec);
+      const ms = Math.floor((timeSec % 1) * 1000);
+      playbackTime.textContent = `00:${s.toString().padStart(2, '0')}.${ms.toString().padStart(3, '0')}`;
+    }
+
+    function applyLightValues(tl, bl, r) {
+      valTL.textContent = tl;
+      valBL.textContent = bl;
+      valR.textContent = r;
+
+      function renderStrip(el, val) {
+        if (val > 100) {
+          el.classList.remove('diffuser-idle');
+          el.classList.add('diffuser-active');
+          el.style.stroke = '#ffffff';
+          el.style.opacity = Math.min(1, 0.4 + val / 2500);
+          el.style.filter = `drop-shadow(0 0 ${Math.round(val / 220)}px #ffffff) drop-shadow(0 0 ${Math.round(val / 110)}px rgba(255, 255, 255, 0.95))`;
+        } else {
+          el.classList.add('diffuser-idle');
+          el.classList.remove('diffuser-active');
+          el.style.stroke = '#b8bdc7';
+          el.style.opacity = '0.9';
+          el.style.filter = 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))';
+        }
+      }
+
+      renderStrip(glyphTL, tl);
+      renderStrip(glyphBL, bl);
+      renderStrip(glyphR, r);
+    }
+
+    // Cross-Browser Audio Decoder Promise
+    function decodeAudioDataCompat(ctx, arrayBuffer) {
+      return new Promise((resolve, reject) => {
+        let isDone = false;
+        try {
+          const res = ctx.decodeAudioData(
+            arrayBuffer,
+            (buf) => { if (!isDone) { isDone = true; resolve(buf); } },
+            (err) => { if (!isDone) { isDone = true; reject(err); } }
+          );
+          if (res && typeof res.then === 'function') {
+            res.then(buf => { if (!isDone) { isDone = true; resolve(buf); } })
+               .catch(err => { if (!isDone) { isDone = true; reject(err); } });
+          }
+        } catch (e) {
+          reject(e);
+        }
+      });
+    }
+
+    // Handle File Upload
+    document.getElementById('audioFileInput').addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      document.getElementById('audioTrackStatus').textContent = "DECODING AUDIO...";
+      const ctx = await getOrCreateAudioContext();
+      stopAllAudio();
+
+      currentFileName = file.name;
+      document.getElementById('currentTrackName').textContent = file.name;
+
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        currentAudioBuffer = await decodeAudioDataCompat(ctx, arrayBuffer);
+        
+        document.getElementById('audioTrackStatus').textContent = "BEATS READY";
+        processAudioForGlyphs();
+        drawWaveform();
+
+        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+        document.getElementById('ffmpegCmdBox').textContent = 
+          `python3 build_glyphtone.py --audio "${safeName}" --csv nothing_3a_lightshow.csv -o "${safeName.split('.')[0]}_glyphtone.ogg"`;
+
+        startPlayback();
+      } catch (err) {
+        console.error("Audio Decode Error:", err);
+        document.getElementById('audioTrackStatus').textContent = "DECODE FAILED";
+        alert("Could not decode audio. Please try another standard MP3 or WAV file.");
+      }
+    });
+
+    // Waveform click to seek
+    waveformContainer.addEventListener('click', (e) => {
+      if (!currentAudioBuffer) return;
+      const rect = waveformContainer.getBoundingClientRect();
+      const clickPct = (e.clientX - rect.left) / rect.width;
+      seekOffset = clickPct * songDuration;
+      if (isPlaying) {
+        startPlayback();
+      } else {
+        updatePlayhead(seekOffset);
+        const frameIdx = Math.floor(seekOffset * 60);
+        if (precomputedFrames[frameIdx]) {
+          applyLightValues(...precomputedFrames[frameIdx]);
+        }
+      }
+    });
+
+    // Play/Stop buttons
+    document.getElementById('btnPlay').addEventListener('click', () => {
+      if (isPlaying) {
+        stopAllAudio();
+      } else {
+        startPlayback();
+      }
+    });
+
+    document.getElementById('btnStop').addEventListener('click', () => {
+      stopAllAudio();
+    });
+
+    // Sliders
+    document.getElementById('sliderBass').addEventListener('input', (e) => {
+      bassSens = parseFloat(e.target.value);
+      document.getElementById('valBassSens').textContent = `${bassSens.toFixed(1)}x`;
+      processAudioForGlyphs();
+      drawWaveform();
+    });
+
+    document.getElementById('sliderThreshold').addEventListener('input', (e) => {
+      onsetThreshold = parseFloat(e.target.value);
+      const label = onsetThreshold < 0.25 ? "High (Sensitive)" : (onsetThreshold > 0.5 ? "Low (Strict)" : "Normal");
+      document.getElementById('valThreshold').textContent = label;
+      processAudioForGlyphs();
+      drawWaveform();
+    });
+
+    // Mode Buttons
+    document.querySelectorAll('.mode-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.mode-btn').forEach(b => {
+          b.classList.remove('border-white', 'text-white', 'bg-neutral-800');
+          b.classList.add('border-neutral-800', 'text-neutral-300', 'bg-neutral-950');
+        });
+        btn.classList.add('border-white', 'text-white', 'bg-neutral-800');
+        btn.classList.remove('border-neutral-800', 'text-neutral-300', 'bg-neutral-950');
+        routingMode = btn.dataset.mode;
+        processAudioForGlyphs();
+      });
+    });
+
+    // CSV Export
+    document.getElementById('btnExportCSV').addEventListener('click', () => {
+      if (precomputedFrames.length === 0) return;
+      let csvContent = "";
+      for (let f = 0; f < precomputedFrames.length; f++) {
+        const [tl, bl, r] = precomputedFrames[f];
+        csvContent += `${tl},${bl},${r},\n`;
+      }
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const baseName = currentFileName.replace(/\.[^/.]+$/, "");
+      a.download = `${baseName}_nothing_3a_glyphtone.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    // WAV Audio Export
+    document.getElementById('btnExportAudio').addEventListener('click', () => {
+      if (!currentAudioBuffer) return;
+      const numChannels = currentAudioBuffer.numberOfChannels;
+      const sampleRate = currentAudioBuffer.sampleRate;
+      const samples = currentAudioBuffer.length;
+      const blockAlign = numChannels * 2;
+      const byteRate = sampleRate * blockAlign;
+      const dataSize = samples * blockAlign;
+      const arrayBuffer = new ArrayBuffer(44 + dataSize);
+      const view = new DataView(arrayBuffer);
+
+      function writeStr(offset, str) {
+        for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
+      }
+
+      writeStr(0, 'RIFF');
+      view.setUint32(4, 36 + dataSize, true);
+      writeStr(8, 'WAVE');
+      writeStr(12, 'fmt ');
+      view.setUint32(16, 16, true);
+      view.setUint16(20, 1, true);
+      view.setUint16(22, numChannels, true);
+      view.setUint32(24, sampleRate, true);
+      view.setUint32(28, byteRate, true);
+      view.setUint16(32, blockAlign, true);
+      view.setUint16(34, 16, true);
+      writeStr(36, 'data');
+      view.setUint32(40, dataSize, true);
+
+      let offset = 44;
+      const ch1 = currentAudioBuffer.getChannelData(0);
+      const ch2 = numChannels > 1 ? currentAudioBuffer.getChannelData(1) : ch1;
+      for (let i = 0; i < samples; i++) {
+        let s1 = Math.max(-1, Math.min(1, ch1[i]));
+        view.setInt16(offset, s1 < 0 ? s1 * 0x8000 : s1 * 0x7FFF, true);
+        offset += 2;
+        if (numChannels > 1) {
+          let s2 = Math.max(-1, Math.min(1, ch2[i]));
+          view.setInt16(offset, s2 < 0 ? s2 * 0x8000 : s2 * 0x7FFF, true);
+          offset += 2;
+        }
+      }
+
+      const wavBlob = new Blob([arrayBuffer], { type: 'audio/wav' });
+      const url = URL.createObjectURL(wavBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      const baseName = currentFileName.replace(/\.[^/.]+$/, "");
+      a.download = `${baseName}_ringtone.wav`;
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    // Copy Command to Clipboard
+    document.getElementById('btnCopyCmd').addEventListener('click', () => {
+      const cmd = document.getElementById('ffmpegCmdBox').textContent.trim();
+      navigator.clipboard.writeText(cmd).then(() => {
+        document.getElementById('btnCopyCmd').textContent = "COPIED TO CLIPBOARD!";
+        setTimeout(() => {
+          document.getElementById('btnCopyCmd').textContent = "COPY FFMPEG COMMAND";
+        }, 2000);
+      });
+    });
+
+    // Initial buffer creation
+    (async () => {
+      try {
+        const dummyCtx = new (window.AudioContext || window.webkitAudioContext)();
+        currentAudioBuffer = generateDemoBufferSync(dummyCtx);
+        processAudioForGlyphs();
+        drawWaveform();
+      } catch (e) {
+        console.warn("Autoplay audio init deferred to user click");
+      }
+    })();
+
+    // Service Worker Registration for PWA / WebAPK Installation
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+      });
+    }
+
+    // PWA Install Prompt Handler
+    let deferredInstallPrompt = null;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredInstallPrompt = e;
+      const btn = document.getElementById('btnInstallApp');
+      if (btn) btn.classList.remove('opacity-70');
+    });
+
+    document.getElementById('btnInstallApp').addEventListener('click', async () => {
+      if (deferredInstallPrompt) {
+        deferredInstallPrompt.prompt();
+        const { outcome } = await deferredInstallPrompt.userChoice;
+        if (outcome === 'accepted') {
+          document.getElementById('btnInstallApp').classList.add('hidden');
+        }
+        deferredInstallPrompt = null;
+      } else {
+        alert("To install directly on your Nothing Phone (3a):\n\n1. Open this page in Chrome, Brave, or your phone's browser.\n2. Tap the browser menu (⋮) in the top-right corner.\n3. Tap 'Install app' or 'Add to Home screen'.\n\nAndroid will automatically package and install it as a native standalone app!");
+      }
+    });
+  </script>
+</body>
+</html>
