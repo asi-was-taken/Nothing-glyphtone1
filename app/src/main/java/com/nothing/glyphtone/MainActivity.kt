@@ -4,6 +4,7 @@ import android.app.Activity
 import android.app.DownloadManager
 import android.content.Context
 import android.content.Intent
+import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
@@ -42,6 +43,12 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         webView = WebView(this)
+        
+        // Set WebView and window background to black to eliminate white borders/flashes
+        webView.setBackgroundColor(Color.BLACK)
+        window.statusBarColor = Color.BLACK
+        window.navigationBarColor = Color.BLACK
+
         setContentView(webView)
 
         setupWebView()
@@ -94,11 +101,62 @@ class MainActivity : AppCompatActivity() {
         webView.setDownloadListener { url, userAgent, contentDisposition, mimeType, _ ->
             try {
                 if (url.startsWith("data:")) {
-                    // Handle base64 encoded data URI exports directly
                     saveDataUriToDownloads(url, mimeType)
                 } else {
-                    // Handle standard HTTP / File URLs via DownloadManager
                     val fileName = URLUtil.guessFileName(url, contentDisposition, mimeType)
                     val request = DownloadManager.Request(Uri.parse(url)).apply {
                         setMimeType(mimeType)
                         val cookies = CookieManager.getInstance().getCookie(url)
+                        addRequestHeader("cookie", cookies)
+                        addRequestHeader("User-Agent", userAgent)
+                        setDescription("Downloading Glyphtone export...")
+                        setTitle(fileName)
+                        setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                        setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName)
+                    }
+
+                    val downloadManager = getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+                    downloadManager.enqueue(request)
+                    Toast.makeText(this, "Downloading $fileName to Downloads...", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                Toast.makeText(this, "Export failed: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    private fun saveDataUriToDownloads(dataUri: String, mimeType: String) {
+        try {
+            val extension = when {
+                mimeType.contains("csv") -> ".csv"
+                mimeType.contains("wav") -> ".wav"
+                mimeType.contains("ogg") -> ".ogg"
+                else -> ".bin"
+            }
+            val fileName = "glyphtone_export_${System.currentTimeMillis()}$extension"
+            val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+            val file = File(downloadsDir, fileName)
+
+            val base64Data = dataUri.substringAfter(",")
+            val fileBytes = Base64.decode(base64Data, Base64.DEFAULT)
+
+            FileOutputStream(file).use { fos ->
+                fos.write(fileBytes)
+            }
+
+            Toast.makeText(this, "Saved to Downloads: $fileName", Toast.LENGTH_LONG).show()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Toast.makeText(this, "Failed to save file: ${e.message}", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    override fun onBackPressed() {
+        if (webView.canGoBack()) {
+            webView.goBack()
+        } else {
+            super.onBackPressed()
+        }
+    }
+}
