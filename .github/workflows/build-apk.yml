@@ -1,5 +1,7 @@
 name: Build Android APK
-
+run: |
+        gradle wrapper
+        ./gradlew assembleDebug --stacktrace
 on:
   push:
     branches: [ main, master ]
