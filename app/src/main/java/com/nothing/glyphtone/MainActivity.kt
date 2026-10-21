@@ -66,6 +66,9 @@ class MainActivity : AppCompatActivity() {
         settings.useWideViewPort = true
         settings.loadWithOverviewMode = true
 
+        // Expose JavaScript bridge to handle local blob exports
+        webView.addJavascriptInterface(BlobDownloadBridge(this), "AndroidBridge")
+
         webView.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
                 return false
@@ -97,11 +100,30 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // Handle Download requests (CSV, WAV, and Base64 Data URIs)
+        // Handle Download requests (Blob URLs, Data URIs, and standard HTTP/HTTPS)
         webView.setDownloadListener { url, userAgent, contentDisposition, mimeType, _ ->
             try {
                 if (url.startsWith("data:")) {
                     saveDataUriToDownloads(url, mimeType)
+                } else if (url.startsWith("blob:")) {
+                    // Fetch blob contents via JavaScript and pass to AndroidBridge
+                    val js = """
+                        (async function() {
+                            try {
+                                const response = await fetch('$url');
+                                const blob = await response.blob();
+                                const reader = new FileReader();
+                                reader.onload = function() {
+                                    AndroidBridge.saveBase64File(reader.result, '$mimeType');
+                                };
+                                reader.readAsDataURL(blob);
+                            } catch (err) {
+                                console.error('Blob fetch failed: ', err);
+                            }
+                        })();
+                    """.trimIndent()
+                    webView.evaluateJavascript(js, null)
+                    Toast.makeText(this, "Processing export...", Toast.LENGTH_SHORT).show()
                 } else {
                     val fileName = URLUtil.guessFileName(url, contentDisposition, mimeType)
                     val request = DownloadManager.Request(Uri.parse(url)).apply {
@@ -126,12 +148,21 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun saveDataUriToDownloads(dataUri: String, mimeType: String) {
+    class BlobDownloadBridge(private val activity: MainActivity) {
+        @JavascriptInterface
+        fun saveBase64File(dataUri: String, mimeType: String) {
+            activity.runOnUiThread {
+                activity.saveDataUriToDownloads(dataUri, mimeType)
+            }
+        }
+    }
+
+    fun saveDataUriToDownloads(dataUri: String, mimeType: String) {
         try {
             val extension = when {
-                mimeType.contains("csv") -> ".csv"
-                mimeType.contains("wav") -> ".wav"
-                mimeType.contains("ogg") -> ".ogg"
+                mimeType.contains("csv") || dataUri.contains("text/csv") -> ".csv"
+                mimeType.contains("wav") || dataUri.contains("audio/wav") -> ".wav"
+                mimeType.contains("ogg") || dataUri.contains("audio/ogg") -> ".ogg"
                 else -> ".bin"
             }
             val fileName = "glyphtone_export_${System.currentTimeMillis()}$extension"
