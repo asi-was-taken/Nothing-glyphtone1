@@ -802,8 +802,8 @@
       const encoder = new TextEncoder();
       const vendor = encoder.encode('Glyphtone 3a');
       const fields = comments.map(comment => encoder.encode(comment));
-      const length = values => [values.length & 255, (values.length >>> 8) & 255,
-        (values.length >>> 16) & 255, (values.length >>> 24) & 255];
+      const length = size => [size & 255, (size >>> 8) & 255,
+        (size >>> 16) & 255, (size >>> 24) & 255];
       const chunks = [encoder.encode('OpusTags'), new Uint8Array(length(vendor.length)), vendor,
         new Uint8Array(length(fields.length))];
       for (const field of fields) chunks.push(new Uint8Array(length(field.length)), field);
