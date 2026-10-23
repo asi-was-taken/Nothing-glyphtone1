@@ -3,6 +3,7 @@ package com.nothing.glyphtone
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.ContentValues
+import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -16,6 +17,7 @@ import android.webkit.WebView
 import android.webkit.WebChromeClient
 import android.webkit.WebViewClient
 import android.webkit.ValueCallback
+import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.webkit.WebViewAssetLoader
@@ -42,14 +44,23 @@ class MainActivity : AppCompatActivity() {
 
         val webView = WebView(this).apply {
             setBackgroundColor(android.graphics.Color.BLACK)
+            isVerticalScrollBarEnabled = false
+            isHorizontalScrollBarEnabled = false
+            overScrollMode = View.OVER_SCROLL_NEVER
             settings.setSupportZoom(false)
             settings.builtInZoomControls = false
             settings.displayZoomControls = false
             webViewClient = object : WebViewClient() {
                 override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
                     val url = request?.url?.toString() ?: return false
-                    return !(url.startsWith("https://appassets.androidplatform.net/assets/") ||
-                        url.startsWith("blob:") || url.startsWith("data:"))
+                    if (url.startsWith("https://appassets.androidplatform.net/assets/") ||
+                        url.startsWith("blob:") || url.startsWith("data:")) return false
+                    return try {
+                        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                        true
+                    } catch (_: android.content.ActivityNotFoundException) {
+                        false
+                    }
                 }
 
                 override fun shouldInterceptRequest(view: WebView?, request: WebResourceRequest?) =
