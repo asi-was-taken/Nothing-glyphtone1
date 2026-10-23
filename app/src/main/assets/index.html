@@ -1006,7 +1006,6 @@
         source = ctx.createBufferSource();
         source.buffer = currentAudioBuffer;
         source.connect(destination);
-        source.connect(masterGain);
         const wasmPath = new URL('./vendor/opus-media-recorder/OggOpusEncoder.wasm', document.baseURI).href;
         recorder = new window.OpusMediaRecorder(destination.stream, {
           mimeType: 'audio/ogg',
