@@ -308,19 +308,9 @@
           </div>
           <p id="exportStatus" role="status" aria-live="polite" class="text-[11px] font-mono text-neutral-400">EXPORT STATUS: READY</p>
 
-          <!-- Compilation Command Assistant -->
-          <div class="bg-neutral-950 border border-neutral-800 rounded-lg p-3 text-[11px] font-mono text-neutral-400">
-            <div class="text-neutral-300 font-bold mb-1 flex items-center justify-between">
-              <span>HOW TO INJECT INTO NOTHING PHONE (3a):</span>
-              <button id="btnCopyCmd" class="text-red-400 hover:text-red-300 text-[10px] underline">COPY FFMPEG COMMAND</button>
-            </div>
-            <p class="leading-relaxed">
-              Use the exported CSV with Python/FFmpeg to compile a native <code class="text-neutral-200 bg-neutral-900 px-1 rounded">.ogg</code> Glyphtone:
-            </p>
-            <code id="ffmpegCmdBox" class="block bg-neutral-900 border border-neutral-800 rounded p-2 text-neutral-200 mt-1 select-all break-all text-[10px]">
-              python3 build_glyphtone.py --audio my_song.mp3 --csv custom_3a_lightshow.csv -o ringtone.ogg
-            </code>
-          </div>
+          <p class="text-[11px] font-mono text-neutral-400 leading-relaxed">
+            The OGG export embeds the 60 FPS Phone (3a) Glyph data. Move it to <code class="text-neutral-200">Ringtones/Compositions</code>, then import it from Settings &gt; Glyph Interface &gt; Ringtones.
+          </p>
         </div>
 
       </div>
@@ -705,6 +695,165 @@
       status.textContent = `EXPORT STATUS: DOWNLOAD STARTED (${fileName})`;
     }
 
+    function glyphFrameColumns([topLeft, bottomLeft, right]) {
+      return Array.from({ length: 36 }, (_, index) =>
+        index < 20 ? topLeft : index < 31 ? right : bottomLeft
+      );
+    }
+
+    function glyphDataText() {
+      const rows = [];
+      const events = [];
+      let previous = [false, false, false];
+      for (let frame = 0; frame < precomputedFrames.length; frame++) {
+        const [topLeft, bottomLeft, right] = precomputedFrames[frame];
+        rows.push(`${glyphFrameColumns(precomputedFrames[frame]).join(',')},`);
+        const active = [topLeft > 100, right > 100, bottomLeft > 100];
+        active.forEach((isActive, glyph) => {
+          if (isActive && !previous[glyph]) events.push(`${Math.round(frame * 1000 / 60)}-${glyph + 1},`);
+        });
+        previous = active;
+      }
+      return { author: rows.length ? `${rows.join('\r\n')}\r\n` : '', custom1: events.join('') };
+    }
+
+    async function compressGlyphTag(value) {
+      const compressed = await new Response(
+        new Blob([value]).stream().pipeThrough(new CompressionStream('deflate'))
+      ).arrayBuffer();
+      const bytes = new Uint8Array(compressed);
+      let binary = '';
+      for (let offset = 0; offset < bytes.length; offset += 0x8000) {
+        binary += String.fromCharCode(...bytes.subarray(offset, offset + 0x8000));
+      }
+      return btoa(binary);
+    }
+
+    function oggCrc(bytes) {
+      let crc = 0;
+      for (const byte of bytes) {
+        crc ^= byte << 24;
+        for (let bit = 0; bit < 8; bit++) {
+          crc = ((crc << 1) ^ ((crc & 0x80000000) ? 0x04c11db7 : 0)) >>> 0;
+        }
+      }
+      return crc >>> 0;
+    }
+
+    function readOggPages(bytes) {
+      const pages = [];
+      const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+      let offset = 0;
+      while (offset < bytes.length) {
+        if (offset + 27 > bytes.length || String.fromCharCode(...bytes.subarray(offset, offset + 4)) !== 'OggS') {
+          throw new Error('Invalid Ogg page');
+        }
+        const segmentCount = bytes[offset + 26];
+        const lacingStart = offset + 27;
+        const bodyStart = lacingStart + segmentCount;
+        let bodyLength = 0;
+        for (let i = 0; i < segmentCount; i++) bodyLength += bytes[lacingStart + i];
+        const end = bodyStart + bodyLength;
+        if (end > bytes.length) throw new Error('Truncated Ogg page');
+        pages.push({
+          bytes: bytes.slice(offset, end),
+          serial: view.getUint32(offset + 14, true),
+          sequence: view.getUint32(offset + 18, true),
+          bodyStart: 27 + segmentCount,
+          bodyLength
+        });
+        offset = end;
+      }
+      return pages;
+    }
+
+    function makeOggPage(packet, serial, sequence, continued) {
+      const lacing = [];
+      for (let remaining = packet.length; remaining >= 255; remaining -= 255) lacing.push(255);
+      lacing.push(packet.length % 255);
+      const pages = [];
+      let laceOffset = 0;
+      let packetOffset = 0;
+      while (laceOffset < lacing.length) {
+        const pageLacing = lacing.slice(laceOffset, laceOffset + 255);
+        const pageBodyLength = pageLacing.reduce((sum, size) => sum + size, 0);
+        const page = new Uint8Array(27 + pageLacing.length + pageBodyLength);
+        page.set([0x4f, 0x67, 0x67, 0x53]);
+        page[4] = 0;
+        page[5] = continued || laceOffset > 0 ? 1 : 0;
+        const view = new DataView(page.buffer);
+        view.setUint32(14, serial, true);
+        view.setUint32(18, sequence++, true);
+        page[26] = pageLacing.length;
+        page.set(pageLacing, 27);
+        page.set(packet.subarray(packetOffset, packetOffset + pageBodyLength), 27 + pageLacing.length);
+        view.setUint32(22, oggCrc(page), true);
+        pages.push(page);
+        laceOffset += pageLacing.length;
+        packetOffset += pageBodyLength;
+      }
+      return pages;
+    }
+
+    function buildOpusTags(comments) {
+      const encoder = new TextEncoder();
+      const vendor = encoder.encode('Glyphtone 3a');
+      const fields = comments.map(comment => encoder.encode(comment));
+      const length = values => [values.length & 255, (values.length >>> 8) & 255,
+        (values.length >>> 16) & 255, (values.length >>> 24) & 255];
+      const chunks = [encoder.encode('OpusTags'), new Uint8Array(length(vendor.length)), vendor,
+        new Uint8Array(length(fields.length))];
+      for (const field of fields) chunks.push(new Uint8Array(length(field.length)), field);
+      const packet = new Uint8Array(chunks.reduce((sum, chunk) => sum + chunk.length, 0));
+      let offset = 0;
+      chunks.forEach(chunk => { packet.set(chunk, offset); offset += chunk.length; });
+      return packet;
+    }
+
+    async function embedGlyphMetadata(oggBlob, title) {
+      const glyphData = glyphDataText();
+      const author = await compressGlyphTag(glyphData.author);
+      const custom1 = await compressGlyphTag(glyphData.custom1);
+      const tags = buildOpusTags([
+        `TITLE=${title}`,
+        'ALBUM=Glyphtone 3a',
+        `AUTHOR=${author}`,
+        'COMPOSER=v1-Asteroids Glyph Composer',
+        `CUSTOM1=${custom1}`,
+        'CUSTOM2=36cols'
+      ]);
+      const pages = readOggPages(new Uint8Array(await oggBlob.arrayBuffer()));
+      const tagIndex = pages.findIndex(page =>
+        String.fromCharCode(...page.bytes.subarray(page.bodyStart, page.bodyStart + 8)) === 'OpusTags'
+      );
+      if (tagIndex < 1) throw new Error('Ogg Opus tags page not found');
+      const originalTagPage = pages[tagIndex];
+      const lacingCount = originalTagPage.bytes[26];
+      const lacing = originalTagPage.bytes.subarray(27, 27 + lacingCount);
+      let oldPacketLength = 0;
+      let packetComplete = false;
+      for (const segment of lacing) {
+        oldPacketLength += segment;
+        if (segment < 255) { packetComplete = true; break; }
+      }
+      if (originalTagPage.bytes[5] & 1 || !packetComplete || oldPacketLength !== originalTagPage.bodyLength) {
+        throw new Error('Unexpected Ogg Opus tags layout');
+      }
+      const newTagPages = makeOggPage(tags, originalTagPage.serial, originalTagPage.sequence, false);
+      const sequenceShift = newTagPages.length - 1;
+      const outputPages = pages.slice(0, tagIndex).map(page => page.bytes);
+      outputPages.push(...newTagPages);
+      for (const oldPage of pages.slice(tagIndex + 1)) {
+        const page = oldPage.bytes.slice();
+        const view = new DataView(page.buffer);
+        view.setUint32(18, oldPage.sequence + sequenceShift, true);
+        view.setUint32(22, 0, true);
+        view.setUint32(22, oggCrc(page), true);
+        outputPages.push(page);
+      }
+      return new Blob(outputPages, { type: 'audio/ogg' });
+    }
+
     // Cross-Browser Audio Decoder Promise
     function decodeAudioDataCompat(ctx, arrayBuffer) {
       return new Promise((resolve, reject) => {
@@ -744,10 +893,6 @@
         document.getElementById('audioTrackStatus').textContent = "BEATS READY";
         processAudioForGlyphs();
         drawWaveform();
-
-        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-        document.getElementById('ffmpegCmdBox').textContent = 
-          `python3 build_glyphtone.py --audio "${safeName}" --csv nothing_3a_lightshow.csv -o "${safeName.split('.')[0]}_glyphtone.ogg"`;
 
         startPlayback();
       } catch (err) {
@@ -820,11 +965,7 @@
     // CSV Export
     document.getElementById('btnExportCSV').addEventListener('click', () => {
       if (precomputedFrames.length === 0) return;
-      let csvContent = "";
-      for (let f = 0; f < precomputedFrames.length; f++) {
-        const [tl, bl, r] = precomputedFrames[f];
-        csvContent += `${tl},${bl},${r}\n`;
-      }
+      const csvContent = glyphDataText().author;
       const blob = new Blob([csvContent], { type: 'text/csv' });
       const baseName = currentFileName.replace(/\.[^/.]+$/, "");
       saveBlob(blob, `${baseName}_nothing_3a_glyphtone.csv`);
@@ -869,7 +1010,7 @@
           status.textContent = 'EXPORT STATUS: OGG ENCODING FAILED';
           cleanup();
         });
-        recorder.addEventListener('stop', () => {
+        recorder.addEventListener('stop', async () => {
           const oggBlob = new Blob(chunks, { type: 'audio/ogg' });
           cleanup();
           if (!oggBlob.size) {
@@ -877,7 +1018,14 @@
             return;
           }
           const baseName = currentFileName.replace(/\.[^/.]+$/, '');
-          saveBlob(oggBlob, `${baseName}_ringtone.ogg`);
+          try {
+            status.textContent = 'EXPORT STATUS: ADDING GLYPH SYNC DATA...';
+            const syncedOgg = await embedGlyphMetadata(oggBlob, baseName);
+            saveBlob(syncedOgg, `${baseName}_glyphtone.ogg`);
+          } catch (error) {
+            console.error('Glyph metadata export failed:', error);
+            status.textContent = 'EXPORT STATUS: COULD NOT ADD GLYPH SYNC DATA';
+          }
         });
         source.onended = () => recorder.stop();
         status.textContent = 'EXPORT STATUS: ENCODING OGG (REAL TIME)...';
@@ -890,17 +1038,6 @@
       }
     }
     document.getElementById('btnExportAudio').addEventListener('click', exportOgg);
-
-    // Copy Command to Clipboard
-    document.getElementById('btnCopyCmd').addEventListener('click', () => {
-      const cmd = document.getElementById('ffmpegCmdBox').textContent.trim();
-      navigator.clipboard.writeText(cmd).then(() => {
-        document.getElementById('btnCopyCmd').textContent = "COPIED TO CLIPBOARD!";
-        setTimeout(() => {
-          document.getElementById('btnCopyCmd').textContent = "COPY FFMPEG COMMAND";
-        }, 2000);
-      });
-    });
 
     // Initial buffer creation
     (async () => {
