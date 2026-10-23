@@ -75,7 +75,7 @@
         <!-- Real-time Zone Readings -->
         <div class="w-full mt-4 grid grid-cols-3 gap-1.5 text-center font-mono text-[11px] text-neutral-400">
           <div class="bg-neutral-950 border border-neutral-800 rounded p-1.5">
-            <div class="text-[10px] text-neutral-500">TL (LOW EQ)</div>
+            <div class="text-[10px] text-neutral-500">TL (HIGH EQ)</div>
             <strong id="val-tl" class="text-white text-xs">0</strong>
           </div>
           <div class="bg-neutral-950 border border-neutral-800 rounded p-1.5">
@@ -83,7 +83,7 @@
             <strong id="val-bl" class="text-white text-xs">0</strong>
           </div>
           <div class="bg-neutral-950 border border-neutral-800 rounded p-1.5">
-            <div class="text-[10px] text-neutral-500">RIGHT (HIGH EQ)</div>
+            <div class="text-[10px] text-neutral-500">RIGHT (LOW EQ)</div>
             <strong id="val-r" class="text-white text-xs">0</strong>
           </div>
         </div>
@@ -388,8 +388,8 @@
           const lit = (power > onsetThreshold && (f % 2 === 0)) ? 4095 : 0;
           zTL = lit; zBL = lit; zR = lit;
         } else if (routingMode === 'eqcountdown') {
-          zTL = Math.round(Math.min(1, bassEnv * 5) * 4095);
-          zR = Math.round(Math.min(1, highEnv * 8) * 4095);
+          zTL = Math.round(Math.min(1, highEnv * 8) * 4095);
+          zR = Math.round(Math.min(1, bassEnv * 5) * 4095);
           zBL = Math.round(Math.max(0, 1 - ((f + 1) / fps) / songDuration) * 4095);
           const zones = Array(36).fill(0);
           const lowLit = Math.round(zTL / 4095 * 20);
