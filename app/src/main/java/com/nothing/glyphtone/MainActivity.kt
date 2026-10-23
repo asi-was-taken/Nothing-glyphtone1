@@ -70,8 +70,8 @@ class MainActivity : AppCompatActivity() {
                 val safeName = fileName.substringAfterLast('/').substringAfterLast('\\')
                     .replace(Regex("[^A-Za-z0-9._-]"), "_").ifBlank { "glyphtone-export" }
                 if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
-                    val downloads = File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
-                        ?: throw IllegalStateException("Export directory unavailable"))
+                    val downloads = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
+                        ?: throw IllegalStateException("Export directory unavailable")
                     downloads.mkdirs()
                     FileOutputStream(File(downloads, safeName)).use { it.write(decodedBytes) }
                     return
