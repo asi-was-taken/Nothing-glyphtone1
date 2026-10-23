@@ -304,6 +304,7 @@
               <span>EXPORT RINGTONE AUDIO (.WAV)</span>
             </button>
           </div>
+          <p id="exportStatus" role="status" aria-live="polite" class="text-[11px] font-mono text-neutral-400">EXPORT STATUS: READY</p>
 
           <!-- Compilation Command Assistant -->
           <div class="bg-neutral-950 border border-neutral-800 rounded-lg p-3 text-[11px] font-mono text-neutral-400">
@@ -681,9 +682,15 @@
     }
 
     function saveBlob(blob, fileName) {
+      const status = document.getElementById('exportStatus');
+      status.textContent = 'EXPORT STATUS: SAVING...';
       if (window.BlobDownloadBridge) {
         const reader = new FileReader();
-        reader.onload = () => window.BlobDownloadBridge.downloadBase64Data(reader.result, fileName, blob.type);
+        reader.onload = () => {
+          const saved = window.BlobDownloadBridge.downloadBase64Data(reader.result, fileName, blob.type);
+          status.textContent = saved ? `EXPORT STATUS: SAVED (${fileName})` : 'EXPORT STATUS: SAVE FAILED';
+        };
+        reader.onerror = () => { status.textContent = 'EXPORT STATUS: COULD NOT READ EXPORT'; };
         reader.readAsDataURL(blob);
         return;
       }
@@ -693,6 +700,7 @@
       a.download = fileName;
       a.click();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
+      status.textContent = `EXPORT STATUS: DOWNLOAD STARTED (${fileName})`;
     }
 
     // Cross-Browser Audio Decoder Promise
