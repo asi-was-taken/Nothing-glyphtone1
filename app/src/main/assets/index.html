@@ -24,6 +24,12 @@
       width: 0;
       height: 0;
     }
+    #aboutDialog:not([open]) {
+      display: none;
+    }
+    #aboutDialog[open] {
+      display: flex;
+    }
     /* Unlit frosted diffuser cap */
     .diffuser-idle {
       stroke: #b8bdc7;
