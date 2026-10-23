@@ -63,11 +63,11 @@
         <div class="w-[270px] h-[540px] rounded-[42px] bg-[#16191e] shadow-[0_20px_50px_rgba(0,0,0,0.9)] relative select-none overflow-hidden border border-[#3b404b]">
           <img src="./phone-3a-black.png" alt="Black Nothing Phone (3a), rear view" class="absolute max-w-none pointer-events-none" style="width:620px; left:calc(50% - 310px); top:-41px;">
           <svg class="absolute inset-0 w-full h-full" viewBox="0 0 270 540" aria-hidden="true">
-            <path d="M 28 94 C 35 70 52 46 81 31" fill="none" stroke="#171b20" stroke-width="11" stroke-linecap="round"/>
-            <path id="glyph-tl" d="M 28 94 C 35 70 52 46 81 31" fill="none" stroke="#b8bdc7" stroke-width="7" stroke-linecap="round" class="diffuser-idle transition-all duration-75"/>
-            <path d="M 35 169 L 61 202" fill="none" stroke="#171b20" stroke-width="11" stroke-linecap="round"/>
-            <path id="glyph-bl" d="M 35 169 L 61 202" fill="none" stroke="#b8bdc7" stroke-width="7" stroke-linecap="round" class="diffuser-idle transition-all duration-75"/>
-            <path d="M 235 95 C 226 121 226 153 233 180" fill="none" stroke="#171b20" stroke-width="11" stroke-linecap="round"/>
+            <path d="M 25 97 C 33 73 56 47 85 29" fill="none" stroke="#20242b" stroke-width="15" stroke-linecap="round"/>
+            <path id="glyph-tl" d="M 25 97 C 33 73 56 47 85 29" fill="none" stroke="#b8bdc7" stroke-width="7" stroke-linecap="round" class="diffuser-idle transition-all duration-75"/>
+            <path d="M 32 166 L 65 204" fill="none" stroke="#20242b" stroke-width="15" stroke-linecap="round"/>
+            <path id="glyph-bl" d="M 32 166 L 65 204" fill="none" stroke="#b8bdc7" stroke-width="7" stroke-linecap="round" class="diffuser-idle transition-all duration-75"/>
+            <path d="M 235 95 C 226 121 226 153 233 180" fill="none" stroke="#20242b" stroke-width="15" stroke-linecap="round"/>
             <path id="glyph-r" d="M 235 95 C 226 121 226 153 233 180" fill="none" stroke="#b8bdc7" stroke-width="7" stroke-linecap="round" class="diffuser-idle transition-all duration-75"/>
           </svg>
         </div>
@@ -579,7 +579,7 @@
           el.classList.add('diffuser-idle');
           el.classList.remove('diffuser-active');
           el.style.stroke = '#b8bdc7';
-          el.style.opacity = '0.9';
+          el.style.opacity = '0';
           el.style.filter = 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))';
         }
       }
@@ -978,6 +978,7 @@
         const dummyCtx = new (window.AudioContext || window.webkitAudioContext)();
         currentAudioBuffer = generateDemoBufferSync(dummyCtx);
         processAudioForGlyphs();
+        applyLightValues(0, 0, 0);
         drawWaveform();
       } catch (e) {
         console.warn("Autoplay audio init deferred to user click");
