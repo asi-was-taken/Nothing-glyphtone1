@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Nothing Phone (3a) Custom Beat-Synced Ringtone Studio</title>
   <meta name="theme-color" content="#0a0b0d">
   <meta name="mobile-web-app-capable" content="yes">
@@ -42,7 +42,7 @@
           <span class="text-xs uppercase tracking-[0.25em] text-red-500 font-mono font-bold">NOTHING PHONE (3a)</span>
         </div>
         <h1 class="text-2xl font-mono font-bold tracking-tight text-white mt-1">MP3 BEAT-SYNCED GLYPHTONE MAKER</h1>
-        <p class="text-xs text-neutral-400 font-mono">IMPORT ANY MP3 &bull; Made By ASI, vibe coded obviously &bull; 60 FPS GLYPH METADATA</p>
+        <p class="text-xs text-neutral-400 font-mono">IMPORT AUDIO &bull; Made By ASI, vibe coded obviously</p>
       </div>
       <div class="flex flex-wrap items-center gap-2">
         <span id="engineBadge" class="text-xs px-2.5 py-1 rounded border border-green-800 bg-green-950/60 text-green-300 font-mono font-bold">AUDIO READY</span>
@@ -57,7 +57,6 @@
         
         <div class="flex items-center justify-between w-full mb-3 text-xs font-mono">
           <span class="text-neutral-400 uppercase tracking-widest font-bold">PHONE (3a) REAR VIEW</span>
-          <span id="fpsCounter" class="text-neutral-400">60.0 FPS</span>
         </div>
 
         <!-- Phone Outer Shell (270px x 540px, 1:2 ratio) -->
@@ -221,7 +220,7 @@
           <div class="flex items-center justify-between mb-2">
             <div class="truncate max-w-[280px]">
               <span id="currentTrackName" class="text-xs font-mono font-bold text-white block truncate">Nothing 3a Demo Synth.mp3</span>
-              <span id="trackDurationInfo" class="text-[10px] font-mono text-neutral-400">Duration: 06.00s &bull; Mode: Beat-Synched</span>
+              <span id="trackDurationInfo" class="text-[10px] font-mono text-neutral-400">Duration: 00:06.000 &bull; Mode: Beat-Synched</span>
             </div>
             <span id="playbackTime" class="text-xs font-mono text-red-400 font-bold">00:00.000</span>
           </div>
@@ -293,13 +292,13 @@
         <div class="bg-neutral-900 border border-neutral-800 rounded-xl p-4 flex flex-col gap-3">
           <div class="flex items-center justify-between">
             <span class="text-xs font-mono text-neutral-400 uppercase tracking-wider font-bold">3. EXPORT CUSTOM RINGTONE & GLYPH DATA</span>
-            <span id="framesCount" class="text-xs font-mono text-green-400 font-bold">360 FRAMES (60 FPS)</span>
+            <span id="framesCount" class="text-xs font-mono text-green-400 font-bold">360 FRAMES</span>
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <button id="btnExportCSV" class="bg-red-600 hover:bg-red-500 text-white font-mono font-bold py-2.5 px-3 rounded-lg text-xs flex items-center justify-center gap-1.5 transition">
               <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
-              <span>EXPORT SYNCED 60 FPS CSV</span>
+              <span>EXPORT PHONE (3a) CSV</span>
             </button>
             <button id="btnExportAudio" class="bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-neutral-700 font-mono text-xs py-2.5 px-3 rounded-lg transition flex items-center justify-center gap-1.5">
               <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
@@ -309,7 +308,7 @@
           <p id="exportStatus" role="status" aria-live="polite" class="text-[11px] font-mono text-neutral-400">EXPORT STATUS: READY</p>
 
           <p class="text-[11px] font-mono text-neutral-400 leading-relaxed">
-            The OGG export embeds the 60 FPS Phone (3a) Glyph data. Move it to <code class="text-neutral-200">Ringtones/Compositions</code>, then import it from Settings &gt; Glyph Interface &gt; Ringtones.
+            The OGG export embeds Phone (3a) Glyph data. Move it to <code class="text-neutral-200">Ringtones/Compositions</code>, then import it from Settings &gt; Glyph Interface &gt; Ringtones.
           </p>
         </div>
 
@@ -338,6 +337,14 @@
     let playbackStartTime = 0;
     let seekOffset = 0;
 
+    function formatTime(seconds) {
+      const safeSeconds = Math.max(0, Number.isFinite(seconds) ? seconds : 0);
+      const minutes = Math.floor(safeSeconds / 60);
+      const wholeSeconds = Math.floor(safeSeconds % 60);
+      const milliseconds = Math.floor((safeSeconds % 1) * 1000);
+      return `${minutes.toString().padStart(2, '0')}:${wholeSeconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(3, '0')}`;
+    }
+
     // DOM Elements
     const glyphTL = document.getElementById('glyph-tl');
     const glyphBL = document.getElementById('glyph-bl');
@@ -349,7 +356,6 @@
     
     const playbackTime = document.getElementById('playbackTime');
     const playheadBar = document.getElementById('playheadBar');
-    const fpsCounter = document.getElementById('fpsCounter');
     const waveformCanvas = document.getElementById('waveformCanvas');
     const waveformContainer = document.getElementById('waveformContainer');
     const framesCount = document.getElementById('framesCount');
@@ -420,16 +426,15 @@
       return buffer;
     }
 
-    // Process Buffer into 60 FPS Glyph Frames
+    // Process Buffer into Glyph Composer timing frames.
     function processAudioForGlyphs() {
       if (!currentAudioBuffer) return;
       const sr = currentAudioBuffer.sampleRate;
       const data = currentAudioBuffer.getChannelData(0);
       const totalLen = data.length;
       songDuration = currentAudioBuffer.duration;
-      const fps = 60.0;
-      const totalFrames = Math.floor(songDuration * fps);
-      const samplesPerFrame = Math.max(1, Math.floor(sr / fps));
+      const fps = 60;
+      const totalFrames = Math.ceil(totalLen * fps / sr - 1e-9);
 
       precomputedFrames = [];
 
@@ -437,8 +442,8 @@
       let prevBass = 0;
 
       for (let f = 0; f < totalFrames; f++) {
-        const startIdx = f * samplesPerFrame;
-        const endIdx = Math.min(totalLen, startIdx + samplesPerFrame);
+        const startIdx = Math.floor(f * sr / fps);
+        const endIdx = Math.min(totalLen, Math.floor((f + 1) * sr / fps));
 
         let sumBass = 0, sumMid = 0, sumHigh = 0;
 
@@ -494,8 +499,8 @@
         precomputedFrames.push([zTL, zBL, zR]);
       }
 
-      framesCount.textContent = `${precomputedFrames.length} FRAMES (60 FPS)`;
-      document.getElementById('trackDurationInfo').textContent = `Duration: ${songDuration.toFixed(2)}s • Frames: ${precomputedFrames.length}`;
+      framesCount.textContent = `${precomputedFrames.length} FRAMES`;
+      document.getElementById('trackDurationInfo').textContent = `Duration: ${formatTime(songDuration)} • Frames: ${precomputedFrames.length}`;
     }
 
     // Render Waveform Canvas
@@ -617,18 +622,13 @@
       updatePlayhead(0);
     }
 
-    let lastTickTime = performance.now();
-    function playbackTick(now) {
+    function playbackTick() {
       if (!isPlaying || !audioCtx) return;
 
       const elapsed = audioCtx.currentTime - playbackStartTime;
       const currentLoopElapsed = elapsed % songDuration;
 
       updatePlayhead(currentLoopElapsed);
-
-      const dt = (now - lastTickTime) / 1000;
-      lastTickTime = now;
-      if (dt > 0) fpsCounter.textContent = `${(1 / dt).toFixed(1)} FPS`;
 
       const frameIndex = Math.floor(currentLoopElapsed * 60);
       if (frameIndex >= 0 && frameIndex < precomputedFrames.length) {
@@ -642,9 +642,7 @@
     function updatePlayhead(timeSec) {
       const pct = Math.min(100, (timeSec / songDuration) * 100);
       playheadBar.style.left = `${pct}%`;
-      const s = Math.floor(timeSec);
-      const ms = Math.floor((timeSec % 1) * 1000);
-      playbackTime.textContent = `00:${s.toString().padStart(2, '0')}.${ms.toString().padStart(3, '0')}`;
+      playbackTime.textContent = formatTime(timeSec);
     }
 
     function applyLightValues(tl, bl, r) {
@@ -759,6 +757,7 @@
           bytes: bytes.slice(offset, end),
           serial: view.getUint32(offset + 14, true),
           sequence: view.getUint32(offset + 18, true),
+          granulePosition: bytes.slice(offset + 6, offset + 14),
           bodyStart: 27 + segmentCount,
           bodyLength
         });
@@ -767,7 +766,7 @@
       return pages;
     }
 
-    function makeOggPage(packet, serial, sequence, continued) {
+    function makeOggPage(packet, serial, sequence, continued, finalGranulePosition) {
       const lacing = [];
       for (let remaining = packet.length; remaining >= 255; remaining -= 255) lacing.push(255);
       lacing.push(packet.length % 255);
@@ -782,6 +781,9 @@
         page[4] = 0;
         page[5] = continued || laceOffset > 0 ? 1 : 0;
         const view = new DataView(page.buffer);
+        const packetComplete = laceOffset + pageLacing.length === lacing.length;
+        if (packetComplete) page.set(finalGranulePosition, 6);
+        else page.fill(0xff, 6, 14);
         view.setUint32(14, serial, true);
         view.setUint32(18, sequence++, true);
         page[26] = pageLacing.length;
@@ -839,7 +841,13 @@
       if (originalTagPage.bytes[5] & 1 || !packetComplete || oldPacketLength !== originalTagPage.bodyLength) {
         throw new Error('Unexpected Ogg Opus tags layout');
       }
-      const newTagPages = makeOggPage(tags, originalTagPage.serial, originalTagPage.sequence, false);
+      const newTagPages = makeOggPage(
+        tags,
+        originalTagPage.serial,
+        originalTagPage.sequence,
+        false,
+        originalTagPage.granulePosition
+      );
       const sequenceShift = newTagPages.length - 1;
       const outputPages = pages.slice(0, tagIndex).map(page => page.bytes);
       outputPages.push(...newTagPages);

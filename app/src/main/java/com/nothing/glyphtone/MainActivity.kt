@@ -42,6 +42,9 @@ class MainActivity : AppCompatActivity() {
 
         val webView = WebView(this).apply {
             setBackgroundColor(android.graphics.Color.BLACK)
+            settings.setSupportZoom(false)
+            settings.builtInZoomControls = false
+            settings.displayZoomControls = false
             webViewClient = object : WebViewClient() {
                 override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
                     val url = request?.url?.toString() ?: return false
