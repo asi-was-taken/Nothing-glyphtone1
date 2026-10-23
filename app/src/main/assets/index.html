@@ -11,6 +11,19 @@
   <script src="./vendor/opus-media-recorder/OpusMediaRecorder.umd.js"></script>
   <script src="./vendor/opus-media-recorder/encoderWorker.umd.js"></script>
   <style>
+    * {
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    html, body {
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    ::-webkit-scrollbar {
+      display: none;
+      width: 0;
+      height: 0;
+    }
     /* Unlit frosted diffuser cap */
     .diffuser-idle {
       stroke: #b8bdc7;
@@ -272,7 +285,7 @@
               <span>EXPORT RINGTONE AUDIO (.OGG)</span>
             </button>
           </div>
-          <p id="exportStatus" role="status" aria-live="polite" class="text-[11px] font-mono text-neutral-400">EXPORT STATUS: READY</p>
+          <p id="exportStatus" role="status" aria-live="polite" class="text-sm font-semibold font-mono text-neutral-300">EXPORT STATUS: READY</p>
 
           <p class="text-[11px] font-mono text-neutral-400 leading-relaxed">
             Export to Downloads, then in Glyph Composer open the menu, tap <code class="text-neutral-200">⋮ &gt; Import</code>, and choose the exported OGG. If Import is unavailable, save a composition in Glyph Composer first.
@@ -286,6 +299,10 @@
   </div>
 
   <script>
+    document.addEventListener('copy', event => event.preventDefault());
+    document.addEventListener('cut', event => event.preventDefault());
+    document.addEventListener('contextmenu', event => event.preventDefault());
+
     // Audio Context & State
     let audioCtx = null;
     let masterGain = null;
