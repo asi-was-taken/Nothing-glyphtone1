@@ -1,11 +1,12 @@
 package com.nothing.glyphtone
 
 import android.annotation.SuppressLint
-import android.app.DownloadManager
 import android.content.Context
-import android.net.Uri
+import android.content.ContentValues
+import android.os.Build
 import android.os.Bundle
 import android.os.Environment
+import android.provider.MediaStore
 import android.util.Base64
 import android.view.Window
 import android.view.WindowManager
@@ -37,10 +38,7 @@ class MainActivity : AppCompatActivity() {
             webViewClient = object : WebViewClient() {
                 override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
                     val url = request?.url?.toString() ?: return false
-                    if (url.startsWith("blob:") || url.startsWith("data:")) {
-                        return false
-                    }
-                    return false
+                    return !(url.startsWith("file:///android_asset/") || url.startsWith("blob:") || url.startsWith("data:"))
                 }
             }
 
@@ -49,7 +47,7 @@ class MainActivity : AppCompatActivity() {
                 domStorageEnabled = true
                 allowFileAccess = true
                 allowContentAccess = true
-                mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+                mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
             }
 
             // Register the bridge to receive file data streams from the web app
@@ -62,39 +60,36 @@ class MainActivity : AppCompatActivity() {
         webView.loadUrl("file:///android_asset/index.html")
     }
 
-    // The bridge responsible for capturing base64 streams and committing them to the Downloads repository
+    // Save exports through MediaStore so this works with Android's scoped storage.
     class BlobDownloadBridge(private val context: Context) {
         @JavascriptInterface
         fun downloadBase64Data(base64Data: String, fileName: String, mimeType: String) {
             try {
-                val cleanBase64 = if (base64Data.contains(",")) {
-                    base64Data.substringAfter(",")
-                } else {
-                    base64Data
-                }
+                val cleanBase64 = base64Data.substringAfter(",")
                 val decodedBytes = Base64.decode(cleanBase64, Base64.DEFAULT)
-                
-                val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-                if (!downloadsDir.exists()) {
-                    downloadsDir.mkdirs()
+                val safeName = fileName.substringAfterLast('/').substringAfterLast('\\')
+                    .replace(Regex("[^A-Za-z0-9._-]"), "_").ifBlank { "glyphtone-export" }
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+                    val downloads = File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
+                        ?: throw IllegalStateException("Export directory unavailable"))
+                    downloads.mkdirs()
+                    FileOutputStream(File(downloads, safeName)).use { it.write(decodedBytes) }
+                    return
                 }
-                
-                val targetFile = File(downloadsDir, fileName)
-                val outputStream = FileOutputStream(targetFile)
-                outputStream.write(decodedBytes)
-                outputStream.close()
-
-                // Register the achievement within the system DownloadManager for user notifications
-                val request = DownloadManager.Request(Uri.fromFile(targetFile)).apply {
-                    setTitle(fileName)
-                    setDescription("Thy Glyphtone export hath been successfully saved.")
-                    setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-                    setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName)
-                    setAllowedOverMetered(true)
-                    setAllowedOverRoaming(true)
+                val values = ContentValues().apply {
+                    put(MediaStore.Downloads.DISPLAY_NAME, safeName)
+                    put(MediaStore.Downloads.MIME_TYPE, mimeType)
+                    put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
                 }
-                val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-                downloadManager.enqueue(request)
+                val resolver = context.contentResolver
+                val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values) ?: return
+                try {
+                    resolver.openOutputStream(uri)?.use { it.write(decodedBytes) }
+                        ?: throw IllegalStateException("Could not open export destination")
+                } catch (e: Exception) {
+                    resolver.delete(uri, null, null)
+                    throw e
+                }
             } catch (e: Exception) {
                 e.printStackTrace()
             }
