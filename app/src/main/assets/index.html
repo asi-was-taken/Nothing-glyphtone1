@@ -8,6 +8,8 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <script src="./vendor/opus-media-recorder/OpusMediaRecorder.umd.js"></script>
+  <script src="./vendor/opus-media-recorder/encoderWorker.umd.js"></script>
   <style>
     /* Unlit frosted diffuser cap */
     .diffuser-idle {
@@ -301,7 +303,7 @@
             </button>
             <button id="btnExportAudio" class="bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-neutral-700 font-mono text-xs py-2.5 px-3 rounded-lg transition flex items-center justify-center gap-1.5">
               <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
-              <span>EXPORT RINGTONE AUDIO (.WAV)</span>
+              <span>EXPORT RINGTONE AUDIO (.OGG)</span>
             </button>
           </div>
           <p id="exportStatus" role="status" aria-live="polite" class="text-[11px] font-mono text-neutral-400">EXPORT STATUS: READY</p>
@@ -828,54 +830,66 @@
       saveBlob(blob, `${baseName}_nothing_3a_glyphtone.csv`);
     });
 
-    // WAV Audio Export
-    document.getElementById('btnExportAudio').addEventListener('click', () => {
-      if (!currentAudioBuffer) return;
-      const numChannels = currentAudioBuffer.numberOfChannels;
-      const sampleRate = currentAudioBuffer.sampleRate;
-      const samples = currentAudioBuffer.length;
-      const blockAlign = numChannels * 2;
-      const byteRate = sampleRate * blockAlign;
-      const dataSize = samples * blockAlign;
-      const arrayBuffer = new ArrayBuffer(44 + dataSize);
-      const view = new DataView(arrayBuffer);
+    // Encode the decoded track to Ogg Opus in real time through the bundled WASM recorder.
+    let oggExporting = false;
+    async function exportOgg() {
+      if (!currentAudioBuffer || oggExporting) return;
+      oggExporting = true;
+      const button = document.getElementById('btnExportAudio');
+      const status = document.getElementById('exportStatus');
+      button.disabled = true;
+      let source, destination, recorder;
+      let cleaned = false;
+      const cleanup = () => {
+        if (cleaned) return;
+        cleaned = true;
+        try { source?.stop(); } catch (error) {}
+        source?.disconnect();
+        destination?.stream.getTracks().forEach(track => track.stop());
+        button.disabled = false;
+        oggExporting = false;
+      };
 
-      function writeStr(offset, str) {
-        for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
+      try {
+        const ctx = await getOrCreateAudioContext();
+        destination = ctx.createMediaStreamDestination();
+        source = ctx.createBufferSource();
+        source.buffer = currentAudioBuffer;
+        source.connect(destination);
+        const wasmPath = new URL('./vendor/opus-media-recorder/OggOpusEncoder.wasm', document.baseURI).href;
+        recorder = new window.OpusMediaRecorder(destination.stream, {
+          mimeType: 'audio/ogg',
+          audioBitsPerSecond: 128000
+        }, { OggOpusEncoderWasmPath: wasmPath });
+        const chunks = [];
+        recorder.addEventListener('dataavailable', event => {
+          if (event.data.size) chunks.push(event.data);
+        });
+        recorder.addEventListener('error', () => {
+          status.textContent = 'EXPORT STATUS: OGG ENCODING FAILED';
+          cleanup();
+        });
+        recorder.addEventListener('stop', () => {
+          const oggBlob = new Blob(chunks, { type: 'audio/ogg' });
+          cleanup();
+          if (!oggBlob.size) {
+            status.textContent = 'EXPORT STATUS: OGG ENCODING FAILED';
+            return;
+          }
+          const baseName = currentFileName.replace(/\.[^/.]+$/, '');
+          saveBlob(oggBlob, `${baseName}_ringtone.ogg`);
+        });
+        source.onended = () => recorder.stop();
+        status.textContent = 'EXPORT STATUS: ENCODING OGG (REAL TIME)...';
+        recorder.start();
+        source.start();
+      } catch (error) {
+        console.error('OGG export failed:', error);
+        status.textContent = 'EXPORT STATUS: OGG ENCODING FAILED';
+        cleanup();
       }
-
-      writeStr(0, 'RIFF');
-      view.setUint32(4, 36 + dataSize, true);
-      writeStr(8, 'WAVE');
-      writeStr(12, 'fmt ');
-      view.setUint32(16, 16, true);
-      view.setUint16(20, 1, true);
-      view.setUint16(22, numChannels, true);
-      view.setUint32(24, sampleRate, true);
-      view.setUint32(28, byteRate, true);
-      view.setUint16(32, blockAlign, true);
-      view.setUint16(34, 16, true);
-      writeStr(36, 'data');
-      view.setUint32(40, dataSize, true);
-
-      let offset = 44;
-      const ch1 = currentAudioBuffer.getChannelData(0);
-      const ch2 = numChannels > 1 ? currentAudioBuffer.getChannelData(1) : ch1;
-      for (let i = 0; i < samples; i++) {
-        let s1 = Math.max(-1, Math.min(1, ch1[i]));
-        view.setInt16(offset, s1 < 0 ? s1 * 0x8000 : s1 * 0x7FFF, true);
-        offset += 2;
-        if (numChannels > 1) {
-          let s2 = Math.max(-1, Math.min(1, ch2[i]));
-          view.setInt16(offset, s2 < 0 ? s2 * 0x8000 : s2 * 0x7FFF, true);
-          offset += 2;
-        }
-      }
-
-      const wavBlob = new Blob([arrayBuffer], { type: 'audio/wav' });
-      const baseName = currentFileName.replace(/\.[^/.]+$/, "");
-      saveBlob(wavBlob, `${baseName}_ringtone.wav`);
-    });
+    }
+    document.getElementById('btnExportAudio').addEventListener('click', exportOgg);
 
     // Copy Command to Clipboard
     document.getElementById('btnCopyCmd').addEventListener('click', () => {

@@ -18,6 +18,7 @@ import android.webkit.WebViewClient
 import android.webkit.ValueCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.webkit.WebViewAssetLoader
 import java.io.File
 import java.io.FileOutputStream
 
@@ -35,14 +36,21 @@ class MainActivity : AppCompatActivity() {
         window.statusBarColor = android.graphics.Color.BLACK
         window.navigationBarColor = android.graphics.Color.BLACK
         window.decorView.setBackgroundColor(android.graphics.Color.BLACK)
+        val assetLoader = WebViewAssetLoader.Builder()
+            .addPathHandler("/assets/", WebViewAssetLoader.AssetsPathHandler(this))
+            .build()
 
         val webView = WebView(this).apply {
             setBackgroundColor(android.graphics.Color.BLACK)
             webViewClient = object : WebViewClient() {
                 override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
                     val url = request?.url?.toString() ?: return false
-                    return !(url.startsWith("file:///android_asset/") || url.startsWith("blob:") || url.startsWith("data:"))
+                    return !(url.startsWith("https://appassets.androidplatform.net/assets/") ||
+                        url.startsWith("blob:") || url.startsWith("data:"))
                 }
+
+                override fun shouldInterceptRequest(view: WebView?, request: WebResourceRequest?) =
+                    request?.url?.let(assetLoader::shouldInterceptRequest)
             }
             webChromeClient = object : WebChromeClient() {
                 override fun onShowFileChooser(
@@ -71,8 +79,7 @@ class MainActivity : AppCompatActivity() {
 
         setContentView(webView)
 
-        // Load thy local application interface from the assets vault
-        webView.loadUrl("file:///android_asset/index.html")
+        webView.loadUrl("https://appassets.androidplatform.net/assets/index.html")
     }
 
     // Save exports through MediaStore so this works with Android's scoped storage.
