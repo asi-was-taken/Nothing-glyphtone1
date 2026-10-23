@@ -308,7 +308,7 @@
           <p id="exportStatus" role="status" aria-live="polite" class="text-[11px] font-mono text-neutral-400">EXPORT STATUS: READY</p>
 
           <p class="text-[11px] font-mono text-neutral-400 leading-relaxed">
-            The OGG export embeds Phone (3a) Glyph data. Move it to <code class="text-neutral-200">Ringtones/Compositions</code>, then import it from Settings &gt; Glyph Interface &gt; Ringtones.
+            Export to Downloads, then in Glyph Composer open the menu, tap <code class="text-neutral-200">⋮ &gt; Import</code>, and choose the exported OGG. If Import is unavailable, save a composition in Glyph Composer first.
           </p>
         </div>
 
@@ -724,7 +724,8 @@
       for (let offset = 0; offset < bytes.length; offset += 0x8000) {
         binary += String.fromCharCode(...bytes.subarray(offset, offset + 0x8000));
       }
-      return btoa(binary);
+      const base64 = btoa(binary).replace(/=+$/, '');
+      return `${base64.match(/.{1,76}/g)?.join('\n') || ''}\n`;
     }
 
     function oggCrc(bytes) {
@@ -1005,12 +1006,17 @@
         source = ctx.createBufferSource();
         source.buffer = currentAudioBuffer;
         source.connect(destination);
+        source.connect(masterGain);
         const wasmPath = new URL('./vendor/opus-media-recorder/OggOpusEncoder.wasm', document.baseURI).href;
         recorder = new window.OpusMediaRecorder(destination.stream, {
           mimeType: 'audio/ogg',
           audioBitsPerSecond: 128000
         }, { OggOpusEncoderWasmPath: wasmPath });
         const chunks = [];
+        const recorderStarted = new Promise((resolve, reject) => {
+          recorder.addEventListener('start', resolve, { once: true });
+          recorder.addEventListener('error', reject, { once: true });
+        });
         recorder.addEventListener('dataavailable', event => {
           if (event.data.size) chunks.push(event.data);
         });
@@ -1036,8 +1042,10 @@
           }
         });
         source.onended = () => recorder.stop();
-        status.textContent = 'EXPORT STATUS: ENCODING OGG (REAL TIME)...';
+        status.textContent = 'EXPORT STATUS: STARTING OGG ENCODER...';
         recorder.start();
+        await recorderStarted;
+        status.textContent = 'EXPORT STATUS: ENCODING OGG (REAL TIME)...';
         source.start();
       } catch (error) {
         console.error('OGG export failed:', error);
