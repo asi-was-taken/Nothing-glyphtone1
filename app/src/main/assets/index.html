@@ -180,15 +180,15 @@
         <!-- Real-time Zone Readings -->
         <div class="w-full mt-4 grid grid-cols-3 gap-1.5 text-center font-mono text-[11px] text-neutral-400">
           <div class="bg-neutral-950 border border-neutral-800 rounded p-1.5">
-            <div class="text-[10px] text-neutral-500">TL (SNARE/MID)</div>
+            <div class="text-[10px] text-neutral-500">TL (LOW EQ)</div>
             <strong id="val-tl" class="text-white text-xs">0</strong>
           </div>
           <div class="bg-neutral-950 border border-neutral-800 rounded p-1.5">
-            <div class="text-[10px] text-neutral-500">BL (HI-HAT/HIGH)</div>
+            <div class="text-[10px] text-neutral-500">BL (TIME LEFT)</div>
             <strong id="val-bl" class="text-white text-xs">0</strong>
           </div>
           <div class="bg-neutral-950 border border-neutral-800 rounded p-1.5">
-            <div class="text-[10px] text-neutral-500">RIGHT (KICK/BASS)</div>
+            <div class="text-[10px] text-neutral-500">RIGHT (HIGH EQ)</div>
             <strong id="val-r" class="text-white text-xs">0</strong>
           </div>
         </div>
@@ -281,9 +281,9 @@
               <div class="font-bold">ENERGY RAVE</div>
               <div class="text-[9px] text-neutral-400">Full strobe drops on high amplitude</div>
             </button>
-            <button class="mode-btn bg-neutral-950 border border-neutral-800 hover:border-neutral-700 text-neutral-300 p-2 rounded text-left font-mono text-xs transition" data-mode="pulse">
-              <div class="font-bold">ORGANIC GLOW</div>
-              <div class="text-[9px] text-neutral-400">Smooth breathing volume track</div>
+            <button class="mode-btn bg-neutral-950 border border-neutral-800 hover:border-neutral-700 text-neutral-300 p-2 rounded text-left font-mono text-xs transition" data-mode="eqcountdown">
+              <div class="font-bold">DUAL GLYPH EQ</div>
+              <div class="text-[9px] text-neutral-400">TL + R equalizer bars • BL time remaining</div>
             </button>
           </div>
         </div>
@@ -333,6 +333,7 @@
     let currentAudioBuffer = null;
     let currentFileName = "Nothing 3a Demo Synth.mp3";
     let precomputedFrames = [];
+    let precomputedZoneFrames = [];
     let songDuration = 6.0;
     let playbackStartTime = 0;
     let seekOffset = 0;
@@ -437,6 +438,7 @@
       const totalFrames = Math.ceil(totalLen * fps / sr - 1e-9);
 
       precomputedFrames = [];
+      precomputedZoneFrames = [];
 
       let bassEnv = 0, midEnv = 0, highEnv = 0;
       let prevBass = 0;
@@ -490,6 +492,18 @@
           const power = Math.max(bassEnv, midEnv);
           const lit = (power > onsetThreshold && (f % 2 === 0)) ? 4095 : 0;
           zTL = lit; zBL = lit; zR = lit;
+        } else if (routingMode === 'eqcountdown') {
+          zTL = Math.round(Math.min(1, bassEnv * 5) * 4095);
+          zR = Math.round(Math.min(1, highEnv * 8) * 4095);
+          zBL = Math.round(Math.max(0, 1 - ((f + 1) / fps) / songDuration) * 4095);
+          const zones = Array(36).fill(0);
+          const lowLit = Math.round(zTL / 4095 * 20);
+          const highLit = Math.round(zR / 4095 * 11);
+          const timeLit = Math.ceil(zBL / 4095 * 5);
+          for (let i = 0; i < lowLit; i++) zones[i] = zTL;
+          for (let i = 0; i < highLit; i++) zones[20 + i] = zR;
+          for (let i = 0; i < timeLit; i++) zones[31 + i] = 4095;
+          precomputedZoneFrames.push(zones);
         } else {
           const energy = Math.min(1, (bassEnv * 0.5 + midEnv * 0.3 + highEnv * 0.2));
           const val = Math.round(energy * 4095);
@@ -497,6 +511,7 @@
         }
 
         precomputedFrames.push([zTL, zBL, zR]);
+        if (routingMode !== 'eqcountdown') precomputedZoneFrames.push(glyphFrameColumns([zTL, zBL, zR]));
       }
 
       framesCount.textContent = `${precomputedFrames.length} FRAMES`;
@@ -651,6 +666,14 @@
       valR.textContent = r;
 
       function renderStrip(el, val) {
+        if (routingMode === 'eqcountdown') {
+          const length = el.getTotalLength();
+          el.style.strokeDasharray = `${length * Math.max(0, val) / 4095} ${length}`;
+          el.style.strokeDashoffset = '0';
+        } else {
+          el.style.strokeDasharray = 'none';
+          el.style.strokeDashoffset = '0';
+        }
         if (val > 100) {
           el.classList.remove('diffuser-idle');
           el.classList.add('diffuser-active');
@@ -705,7 +728,7 @@
       let previous = [false, false, false];
       for (let frame = 0; frame < precomputedFrames.length; frame++) {
         const [topLeft, bottomLeft, right] = precomputedFrames[frame];
-        rows.push(`${glyphFrameColumns(precomputedFrames[frame]).join(',')},`);
+        rows.push(`${precomputedZoneFrames[frame].join(',')},`);
         const active = [topLeft > 100, right > 100, bottomLeft > 100];
         active.forEach((isActive, glyph) => {
           if (isActive && !previous[glyph]) events.push(`${Math.round(frame * 1000 / 60)}-${glyph},`);
