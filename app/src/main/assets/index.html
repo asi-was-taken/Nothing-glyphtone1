@@ -29,13 +29,6 @@
       background-image: radial-gradient(#3c424d 1.5px, transparent 1.5px);
       background-size: 7px 7px;
     }
-    .dot-matrix-title {
-      color: transparent;
-      background: radial-gradient(circle, #f5f5f5 1.15px, transparent 1.3px) 0 0 / 4px 4px;
-      background-clip: text;
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
   </style>
 </head>
 <body class="bg-transparent text-[var(--foreground)] antialiased p-3 sm:p-5">
@@ -48,7 +41,7 @@
           <span class="inline-block w-2.5 h-2.5 rounded-full bg-red-600 animate-pulse"></span>
           <span class="text-xs uppercase tracking-[0.25em] text-red-500 font-mono font-bold">NOTHING PHONE (3a)</span>
         </div>
-        <h1 class="dot-matrix-title text-2xl font-mono font-bold tracking-tight mt-1">BEAT-SYNCED GLYPHTONE MAKER</h1>
+        <h1 class="text-2xl font-bold tracking-tight text-white mt-1">BEAT-SYNCED GLYPHTONE MAKER</h1>
       </div>
       <div class="flex flex-wrap items-center gap-2">
         <button id="btnAbout" class="text-xs px-2.5 py-1 rounded border border-neutral-700 bg-neutral-900 text-neutral-300 font-mono hover:border-neutral-500" type="button">ABOUT</button>
@@ -145,10 +138,10 @@
             <!-- Tracks and live light strokes use identical paths, so they cannot drift apart. -->
             <path d="M87 36A104 104 0 0 0 36 97" fill="none" stroke="#171b20" stroke-width="10" stroke-linecap="round"/>
             <path id="glyph-tl" d="M87 36A104 104 0 0 0 36 97" fill="none" stroke="#dce1e8" stroke-width="6.5" stroke-linecap="round" class="diffuser-idle transition-all duration-75"/>
-            <path d="M39 174A106.8 106.8 0 0 0 80 220" fill="none" stroke="#171b20" stroke-width="10" stroke-linecap="round"/>
-            <path id="glyph-bl" d="M39 174A106.8 106.8 0 0 0 80 220" fill="none" stroke="#dce1e8" stroke-width="6.5" stroke-linecap="round" class="diffuser-idle transition-all duration-75"/>
-            <path d="M232 69A130 130 0 0 1 232 186" fill="none" stroke="#171b20" stroke-width="10" stroke-linecap="round"/>
-            <path id="glyph-r" d="M232 69A130 130 0 0 1 232 186" fill="none" stroke="#dce1e8" stroke-width="6.5" stroke-linecap="round" class="diffuser-idle transition-all duration-75"/>
+            <path d="M39 174L80 220" fill="none" stroke="#171b20" stroke-width="10" stroke-linecap="round"/>
+            <path id="glyph-bl" d="M39 174L80 220" fill="none" stroke="#dce1e8" stroke-width="6.5" stroke-linecap="round" class="diffuser-idle transition-all duration-75"/>
+            <path d="M221 69A104 104 0 0 1 221 187" fill="none" stroke="#171b20" stroke-width="10" stroke-linecap="round"/>
+            <path id="glyph-r" d="M221 69A104 104 0 0 1 221 187" fill="none" stroke="#dce1e8" stroke-width="6.5" stroke-linecap="round" class="diffuser-idle transition-all duration-75"/>
             <circle cx="135" cy="224" r="2.5" fill="#242a33" stroke="#66707d" stroke-width="0.8"/>
             <rect x="0" y="152" width="4" height="34" rx="2" fill="#707784"/>
             <rect x="266" y="161" width="4" height="50" rx="2" fill="#707784"/>
