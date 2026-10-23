@@ -45,9 +45,43 @@
         <p class="text-xs text-neutral-400 font-mono">IMPORT AUDIO &bull; Made By ASI, vibe coded obviously</p>
       </div>
       <div class="flex flex-wrap items-center gap-2">
+        <button id="btnAbout" class="text-xs px-2.5 py-1 rounded border border-neutral-700 bg-neutral-900 text-neutral-300 font-mono hover:border-neutral-500" type="button">ABOUT</button>
         <span id="engineBadge" class="text-xs px-2.5 py-1 rounded border border-green-800 bg-green-950/60 text-green-300 font-mono font-bold">AUDIO READY</span>
       </div>
     </div>
+
+    <dialog id="aboutDialog" class="w-[min(92vw,42rem)] max-h-[85vh] overflow-y-auto rounded-xl border border-neutral-700 bg-neutral-950 p-0 text-neutral-100 shadow-2xl backdrop:bg-black/80">
+      <div class="flex items-center justify-between border-b border-neutral-800 p-4">
+        <div>
+          <p class="text-[10px] font-mono uppercase tracking-[0.25em] text-red-500">PROJECT CREDITS</p>
+          <h2 class="text-xl font-mono font-bold text-white">About Glyphtone</h2>
+        </div>
+        <form method="dialog"><button class="rounded border border-neutral-700 px-3 py-1.5 text-xs font-mono text-neutral-300 hover:border-neutral-500" aria-label="Close About page">CLOSE</button></form>
+      </div>
+      <div class="space-y-5 p-4 text-sm leading-relaxed text-neutral-300">
+        <section>
+          <h3 class="mb-1 font-mono font-bold text-white">Owner &amp; maintainer</h3>
+          <p>ASI — project owner and maintainer.</p>
+          <a class="text-red-400 underline" href="https://github.com/asi-was-taken/Nothing-glyphtone1">Project repository</a>
+        </section>
+        <section>
+          <h3 class="mb-2 font-mono font-bold text-white">Code &amp; software credits</h3>
+          <ul class="list-disc space-y-2 pl-5">
+            <li><a class="text-red-400 underline" href="https://github.com/kbumsik/opus-media-recorder">Bumsik Kim — opus-media-recorder</a>: bundled browser audio recorder, OGG/Opus encoding worker, and WASM encoder.</li>
+            <li><a class="text-red-400 underline" href="https://github.com/chris-rudmin/opus-recorder">Christopher Rudmin — opus-recorder</a>: original Ogg Opus implementation that inspired the bundled encoder.</li>
+            <li><a class="text-red-400 underline" href="https://xiph.org/">Xiph.Org Foundation and contributors</a>: libopus, speexdsp, and libogg used by the bundled encoder. Contributors named in its license include Jean-Marc Valin, Timothy B. Terriberry, Gregory Maxwell, Mark Borgerding, and Erik de Castro Lopo, along with Skype, Octasic, and CSIRO.</li>
+            <li><a class="text-red-400 underline" href="https://www.webmproject.org/">Google — libwebm</a>: bundled media library dependency.</li>
+            <li><a class="text-red-400 underline" href="https://developer.android.com/jetpack/androidx">AndroidX and Google</a>: Core KTX, AppCompat, Activity, WebKit, and Material Components used by the Android app shell, WebView, and interface.</li>
+            <li><a class="text-red-400 underline" href="https://tailwindcss.com/">Tailwind CSS</a>: utility classes used to style the app interface.</li>
+          </ul>
+        </section>
+        <section>
+          <h3 class="mb-1 font-mono font-bold text-white">Product image</h3>
+          <p><a class="text-red-400 underline" href="https://www.nothing.tech/">Nothing</a>: official Phone (3a) rear render used in the visualizer. Nothing and Phone (3a) are trademarks of their respective owner; this project is independent.</p>
+        </section>
+        <p class="border-t border-neutral-800 pt-3 text-xs text-neutral-500">Third-party license notices are included with <a class="text-red-400 underline" href="./vendor/opus-media-recorder/LICENSE.md">opus-media-recorder</a>.</p>
+      </div>
+    </dialog>
 
     <!-- Main Workspace -->
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
@@ -190,12 +224,8 @@
             <span id="framesCount" class="text-xs font-mono text-green-400 font-bold">360 FRAMES</span>
           </div>
 
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <button id="btnExportCSV" class="bg-red-600 hover:bg-red-500 text-white font-mono font-bold py-2.5 px-3 rounded-lg text-xs flex items-center justify-center gap-1.5 transition">
-              <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
-              <span>EXPORT PHONE (3a) CSV</span>
-            </button>
-            <button id="btnExportAudio" class="bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-neutral-700 font-mono text-xs py-2.5 px-3 rounded-lg transition flex items-center justify-center gap-1.5">
+          <div class="grid grid-cols-1 gap-2">
+            <button id="btnExportAudio" class="bg-red-600 hover:bg-red-500 text-white font-mono font-bold py-2.5 px-3 rounded-lg transition flex items-center justify-center gap-1.5">
               <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
               <span>EXPORT RINGTONE AUDIO (.OGG)</span>
             </button>
@@ -889,14 +919,7 @@
       });
     });
 
-    // CSV Export
-    document.getElementById('btnExportCSV').addEventListener('click', () => {
-      if (precomputedFrames.length === 0) return;
-      const csvContent = glyphDataText().author;
-      const blob = new Blob([csvContent], { type: 'text/csv' });
-      const baseName = currentFileName.replace(/\.[^/.]+$/, "");
-      saveBlob(blob, `${baseName}_nothing_3a_glyphtone.csv`);
-    });
+    document.getElementById('btnAbout').addEventListener('click', () => document.getElementById('aboutDialog').showModal());
 
     // Encode the decoded track to Ogg Opus in real time through the bundled WASM recorder.
     let oggExporting = false;
